@@ -1,0 +1,28 @@
+{
+  "name": "vueex01",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:server": "nodemon server/index.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/vue-query": "^5.75.5",
+    "axios": "^1.9.0",
+    "connect-redis": "^8.0.3",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "pinia": "^3.0.2",
+    "pinia-plugin-persistedstate": "^4.2.0",
+    "redis": "^5.0.1",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "nodemon": "^3.1.10",
+    "vite": "^6.3.5"
+  }
+}
