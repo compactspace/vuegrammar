@@ -1,24 +1,25 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue';
-import Ex01 from './examplecompo/리엑티브/Ex01.vue';
-import Ex02 from './examplecompo/리엑티브/Ex02.vue';
-import PinEx01 from './examplecompo/상태관리/PinEx01.vue';
-import PersistencePinEx01 from './examplecompo/영구상태관리/PersistencePinEx01.vue';
-import LocalJavaEx01 from './examplecompo/로컬자바서버/LocalJavaEx01.vue';
+
+import NavBar from "../src/common/NavBar.vue";
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+// 숨길 경로 목록
+const hiddenRoutes = ['/login', '/signup', '/splash']
+
+// 현재 라우트 가져오기
+const route = useRoute()
+
+// 네브바 숨길지 여부 계산
+const shouldHideNavBar = computed(() => hiddenRoutes.includes(route.path))
 </script>
 
 <template>
   <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+    <!-- 로그인 등에서는 숨김 -->
+    <NavBar v-if="!shouldHideNavBar" />
+    <router-view />
   </div>
-  <!-- <HelloWorld msg="Vite + Vue" /> -->
-  <LocalJavaEx01/>
-
 </template>
 
 <style scoped>

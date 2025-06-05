@@ -1,13 +1,18 @@
-import { createApp } from 'vue';
-import './style.css';
-import App from './App.vue';
-import { createPinia } from 'pinia';
-import piniaPersistedstate from 'pinia-plugin-persistedstate';
+// main.js
+import { createApp } from "vue";
+import App from "./App.vue";
+import { createPinia } from "pinia";
+import piniaPersistedstate from "pinia-plugin-persistedstate";
+import router from "./router";
+import axios from "axios";
 
+axios.defaults.withCredentials = true;
+axios.defaults.baseURL = "/api"; // 프록시로 api 경로 전환
 const app = createApp(App);
-
+// Pinia 설정
 const pinia = createPinia();
-pinia.use(piniaPersistedstate); // ✅ 여기에 등록해야 함
+pinia.use(piniaPersistedstate);
 
 app.use(pinia);
-app.mount('#app');
+app.use(router);
+app.mount("#app");
