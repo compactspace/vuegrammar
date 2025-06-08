@@ -17,7 +17,9 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useStoreSocketActivatigLocation } from "../stores/useStoreSocketActivatigLocation.js";
+import { useRetrySocketStroe } from "../stores/useRetrySocketStroe.js";
 const socketActivatigLocation = useStoreSocketActivatigLocation();
+const retrySocketStroe =useRetrySocketStroe();
 const API_KEY = "YOUR_KAKAO_MAP_API_KEY";
 //socketActivatigLocation.connectSocket();
 
@@ -28,7 +30,7 @@ let map = null;
 let marker = null;
 let watchId = null;
 
-// 1. 카카오 지도 초기화
+// 1. 카카오 지도  범위와 마커 위치 초기화
 const initMap = () => {
   map = new kakao.maps.Map(document.getElementById("map"), {
     center: new kakao.maps.LatLng(userLocation.value.lat, userLocation.value.lon),
@@ -65,8 +67,14 @@ const trackAndSendLocation = () => {
       if (locationLogs.value.length > 20) locationLogs.value.pop();
 
       // 서버에 위치 업데이트 emit
-      console.log(socketActivatigLocation.socketActivatigLocation)
-      socketActivatigLocation.socketActivatigLocation.emit("mussemLocationUpdate", { lat: latitude, lon: longitude });
+      // 개망 내실수다. 아무튼 분기점을 준다.
+      if(retrySocketStroe.socket!=null||retrySocketStroe.socket!=undefined){
+      retrySocketStroe.socket.emit("mussemLocationUpdate", { lat: latitude, lon: longitude });
+      }else if(socketActivatigLocation.socketActivatigLocation!=null||socketActivatigLocation.socketActivatigLocation!=undefined){
+
+        socketActivatigLocation.socketActivatigLocation.emit("mussemLocationUpdate", { lat: latitude, lon: longitude });
+      }
+
     },
     (error) => {
       console.error("위치 추적 에러:", error);
@@ -78,7 +86,15 @@ const trackAndSendLocation = () => {
 // 3. 소켓 연결 및 초기 데이터 셋팅
 onMounted(() => {
 
-  console.log(`소캣 객체가 널임?:  ${socketActivatigLocation.socketActivatigLocation}`)
+ 
+retrySocketStroe.socket.on("acceptRequest", (data) => {
+
+  retrySocketStroe.socket.emit("acceptRequest", data); // 서버에 다시 요청해서 방에 참여
+});
+
+
+
+
 
 
 

@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.get("/logout", logout);
+router.post("/logout", logout);
 router.get("/authcheck", authcheck);
 router.get("/getTermList", getTermList);
 router.post("/check-email", checkEmailExistsController);

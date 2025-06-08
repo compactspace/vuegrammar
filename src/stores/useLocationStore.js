@@ -54,6 +54,31 @@ export const useLocationStore = defineStore("location", {
         this.userLocation = {};
       }
     },
+    getCurrentLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Geolocation is not supported"));
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            const location = { lat: latitude, lon: longitude };
+            this.userLocation = location; // 필요시 업데이트
+            resolve(location);
+          },
+          (error) => {
+            reject(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      });
+    },
   },
   persist: true,
 });

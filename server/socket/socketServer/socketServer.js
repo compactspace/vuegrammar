@@ -14,6 +14,7 @@ import { registerCustomerEvents } from "../eventHandler/registerCustomerEvents.j
 
 import { insertMatchingModel } from "../model/employmentModel.js";
 
+import { retrySocketRegisterEvent } from "../registerSocketEvent/retrySocketRegisterEvent.js";
 const options = {
   key: fs.readFileSync("C:/Windows/System32/localhost-key.pem"),
   cert: fs.readFileSync("C:/Windows/System32/localhost.pem"),
@@ -193,19 +194,48 @@ activitingLocation.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    // 1. 연결 목록 정리
     printConnectedactivitingLocation();
     connectedactivitingLocation.delete(socket.id);
-    console.clear();
+    //console.clear();
     console.log(`❌ [해제] 클라이언트 연결 해제: ${socket.id}`);
-    // console.log(`🛑 사유: ${reason}`);
+
+    // 2. 소켓의 역할 및 방 정보 추출
     const role = socket.data?.role || "unknown";
     const roomId = socket.data?.roomId || "none";
 
-    // console.log(
-    //   `❌ Socket disconnected: ${socket.id} (role: ${role}, roomId: ${roomId})`
-    // );
+    // 3. mussem이 방장일 경우, 해당 방에 있는 customer들을 강제로 나가게 처리
+    if (
+      role === "mussem" &&
+      roomId &&
+      activitingLocation.adapter.rooms.has(roomId)
+    ) {
+      const roomMembers = activitingLocation.adapter.rooms.get(roomId);
 
-    // 1. 현재 네임스페이스 내 모든 연결된 소켓
+      console.log(
+        `🧹 방 "${roomId}"의 mussem(${socket.id}) 연결 해제로 customer들을 정리 중...`
+      );
+
+      for (const clientId of roomMembers) {
+        if (clientId === socket.id) continue; // mussem 본인은 이미 연결 종료됨
+
+        const clientSocket = activitingLocation.sockets.get(clientId);
+        if (clientSocket?.data?.role === "customer") {
+          console.log(`고객 나가라:  ${clientSocket.id}`);
+          clientSocket.emit("forceExit", {
+            message: "out",
+          });
+
+          clientSocket.leave(roomId); // 방에서 제거 (선택 사항)
+          // 또는 완전 연결 종료도 가능: clientSocket.disconnect(true);
+          console.log(`👢 고객(${clientId}) 강제 방 나감`);
+        }
+      }
+
+      console.log(`✅ 방 "${roomId}"의 정리가 완료되었습니다.`);
+    }
+
+    // 4. 현재 네임스페이스에 남아 있는 소켓 목록 출력
     console.log("📡 현재 /activitingLocation 네임스페이스의 연결된 소켓 목록:");
     for (const [id, s] of activitingLocation.sockets) {
       console.log(
@@ -215,7 +245,7 @@ activitingLocation.on("connection", (socket) => {
       );
     }
 
-    // 2. 해당 socket.data.roomId 에 남아 있는 클라이언트 목록
+    // 5. 방에 남아 있는 유저 목록 출력
     if (roomId && activitingLocation.adapter.rooms.has(roomId)) {
       const roomMembers = activitingLocation.adapter.rooms.get(roomId);
       console.log(`🏠 방 "${roomId}"의 남은 유저 목록:`);
@@ -227,6 +257,10 @@ activitingLocation.on("connection", (socket) => {
         `⚠️ 방 "${roomId}"는 더 이상 존재하지 않음 (모든 유저 나감).`
       );
     }
+
+    printConnectedactivitingLocation();
+    printRoomsAndMembers();
+    printAllSocketSummary();
   });
 
   socket.on(
@@ -278,17 +312,15 @@ activitingLocation.on("connection", (socket) => {
           s.data?.roomId === myRoomId &&
           s.data?.clientId === fromCustomerEmail
       );
-      // console.log(customerSocket);
+
       if (customerSocket) {
         customerSocket.join(roomId);
         // 고객 소켓에도 매칭 방 저장
-        console.log(customerSocket.data);
+
         let matchingData = {
           employer_id: customerSocket.data.customerPk,
           mussem_id: mussemPk,
         };
-
-        console.log(matchingData);
 
         insertMatchingModel(matchingData);
 
@@ -451,8 +483,64 @@ testSocket.on("connection", (socket) => {
 const connectedactivitingLocation = new Map(); // socket.id → { role }
 // 보기 좋은 접속 목록 출력 함수
 const printConnectedactivitingLocation = () => {
-  console.log("[접속 리스트]");
+  console.log("[네임스페이스_activitingLocation_접속 리스트]");
   for (const [sockId, info] of connectedactivitingLocation.entries()) {
     console.log(`- ${sockId} | role: ${info.role}`);
   }
 };
+
+// 방별 소켓 참여자 리스트 보기
+const printRoomsAndMembers = () => {
+  console.log("\n📦 [활성 방 목록 및 멤버 정보]");
+  const rooms = activitingLocation.adapter.rooms;
+
+  if (rooms.size === 0) {
+    console.log("❗ 현재 존재하는 방이 없습니다.");
+    return;
+  }
+
+  for (const [roomId, clients] of rooms) {
+    // rooms Map은 roomId와 Set<socket.id>를 가지고 있음
+    // 단, socket.id도 roomId로 사용되기 때문에 필터링 필요
+    if (activitingLocation.sockets.has(roomId)) continue; // socket.id인 경우 skip
+
+    console.log(`🏠 방: "${roomId}" | 참여자 수: ${clients.size}`);
+    for (const clientId of clients) {
+      const clientSocket = activitingLocation.sockets.get(clientId);
+      const role = clientSocket?.data?.role || "unknown";
+      console.log(`  └─ 👤 소켓 ID: ${clientId} | 역할: ${role}`);
+    }
+  }
+};
+
+// 전체 소켓 접속 현황 보기
+const printAllSocketSummary = () => {
+  console.log("\n🌐 [현재 /activitingLocation 전체 소켓 요약]");
+
+  if (activitingLocation.sockets.size === 0) {
+    console.log("❗ 현재 연결된 소켓이 없습니다.");
+    return;
+  }
+
+  for (const [sockId, socket] of activitingLocation.sockets) {
+    const role = socket.data?.role || "unknown";
+    const roomId = socket.data?.roomId || "none";
+    console.log(`- ${sockId} | role: ${role} | roomId: ${roomId}`);
+  }
+};
+
+const retrySocket = io.of("/retrySocket");
+
+retrySocket.on("connection", (socket) => {
+  // console.log(socket.handshake.auth);
+
+  const { retryData } = socket.handshake.auth;
+
+  const { employer_id, mussem_id } = retryData.unComplteEmploy;
+  const role = retryData.userData.userDetail.role;
+  const email = retryData.userData.userDetail.email;
+
+  socket.data = { role, email, employer_id, mussem_id };
+
+  retrySocketRegisterEvent(socket, retrySocket);
+});

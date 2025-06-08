@@ -8,7 +8,6 @@
       <router-link to="/mussemSignUp" class="corner-fold">머슴 되기</router-link>
       <div class="banner-text">
         <h1>🏃‍♂️찾기</h1>
-        <!-- 기존 input 삭제 후 컴포넌트 삽입 -->
         <MainBannerLocation />
       </div>
     </div>
@@ -16,28 +15,50 @@
     <!-- 🎯 메인 버튼 영역 -->
     <div class="home-container">
       <div class="button-group">
-        <a href="#" class="nav-button" @click.prevent="handleCheckLocation('/FindMussem')">📦내 위치 머슴 확인</a>
-      <a href="#" class="nav-button" @click.prevent="handleCheckLocation('/mypage')">🧾 내 머슴 현황</a>
-      <a href="#" class="nav-button" @click.prevent="handleCheckLocation('/mussemLocationSearch')">🪓 머슴으로 일하기</a>
+  
+        <template v-if="!showFindMussemButton">
+          <a href="#" class="nav-button" @click.prevent="handleCheckLocation('/FindMussem')">📦내 위치 머슴 확인</a>
+        </template>
+        <template v-else>
+          <a href="#" class="nav-button" @click.prevent="retryJoinRoom()">🧾 내가 고용한 머슴 현황</a>
+          <a href="#" class="nav-button" @click.prevent="handleCheckLocation('/mussemLocationSearch')">🪓 머슴으로 일하기</a>
+        </template>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
-
 import { useMediaQuery } from '@vueuse/core'
-import MainBannerLocation from '../components/MainHome/MainBannerLocation.vue' // 경로 확인해주세요
-import { useStoreMyLocation } from '../stores/useStoreMyLocation'
+import { ref, computed, watchEffect,onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { io } from "socket.io-client";
-import { onMounted } from 'vue';
-import { useSocketStore } from '../stores/socketStore';
-const router = useRouter()
-const store = useStoreMyLocation()
-const socketStore=useSocketStore();
-function handleCheckLocation(path) {
-  alert(store.myLocation)
+import MainBannerLocation from '../components/MainHome/MainBannerLocation.vue'
+import { useStoreMyLocation } from '../stores/useStoreMyLocation'
+import { useSocketStore } from '../stores/socketStore'
+import { useRetrySocketStroe } from '../stores/useRetrySocketStroe'
+import { useUserStore } from '../stores/userStore'
+
+const router = useRouter();
+const store = useStoreMyLocation();
+const socketStore = useSocketStore();
+const retrySocketStore=useRetrySocketStroe();
+const userStore = useUserStore()
+
+const unComplteEmployStatus = ref(null)
+
+watchEffect(() => {
+  const status = userStore.unComplteEmploy?.status
+  console.log('고용 상태 변경 감지됨:', status)
+  unComplteEmployStatus.value = status
+})
+
+const showFindMussemButton = computed(() => {
+  const status = unComplteEmployStatus.value
+  console.log( unComplteEmployStatus.value)
+ 
+  return status === 'in_progress'?  true : false
+})
+
+const handleCheckLocation = (path) => {
   if (!store.myLocation) {
     alert('주소를 먼저 입력해야 합니다.')
     return
@@ -45,17 +66,55 @@ function handleCheckLocation(path) {
   router.push(path)
 }
 
-const IP = import.meta.env.VITE_ALLOW_IP;
-onMounted(()=>{
 
-  
-//   const test=io( `https://${IP}:5000/testSocket`);
-//   console.log(test)
-// test.on('connect', () => {
-//   console.log('서버와 연결됨');
-//   console.log('소켓 아이디:', test.id);
-// });
+const retryJoinRoom = () => {
+  const employer_id = userStore.authUser.userDetail.id;
+  console.log(`employer_id: ${employer_id}`);
+
+  // 이벤트 리스너 중복 방지
+  retrySocketStore.socket.off("successRequest");
+  retrySocketStore.socket.off("notFoundMussem");
+
+  // 요청 보내기
+  retrySocketStore.socket.emit("requestJoinRetryRoom");
+
+  // 성공 응답 리스너 (한 번만 등록)
+  retrySocketStore.socket.on("successRequest", (data) => {
+    const { retryJoinRoom } = data;
+    if (retryJoinRoom === "success") {
+      alert("하하하");
+       router.push("/matchCustomer")
+      
+    }
+  });
+
+  // 실패 응답 리스너 (한 번만 등록)
+  retrySocketStore.socket.on("notFoundMussem", (data) => {
+    const { notFoundMussem } = data;
+    alert(notFoundMussem || "머슴이 먹튀");
+  });
+};
+
+
+onMounted(()=>{
+   const ComplteEmployStatus=userStore?.unComplteEmploy?.status;
  
+   if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket===null){
+
+retrySocketStore.connectSocket();
+return;
+
+  }
+  if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket!=null){
+    const   employer_id =userStore.authUser.userDetail.id
+    console.log(`employer_id: ${employer_id}`)
+    retrySocketStore.socket.on(`retry_target_${employer_id}`,(data)=>{
+      const {retryJoinRoom}=data;
+      if(retryJoinRoom==="success"){
+         
+      }
+    })
+  }
 })
 
 

@@ -13,7 +13,12 @@ import {
   insertAgreements,
 } from "../sql/mussemSignUp/mussemSignUpQuery.js";
 
-import { loginInfo, mussemActiveArea } from "../sql/users/login.js";
+import {
+  loginInfo,
+  mussemActiveArea,
+  employInfoForCustomer,
+  employInfoForMussem,
+} from "../sql/users/login.js";
 // __dirname 대체 (ESM)
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);
@@ -90,6 +95,21 @@ const mussemActiveAreaModel = async (client, email) => {
   return result.rows[0];
 };
 
+const getEmployInfoModel = async (client, idPk, role) => {
+  let queryEmploymentInfo;
+  if (role === "mussem") {
+    queryEmploymentInfo = employInfoForMussem;
+  } else {
+    queryEmploymentInfo = employInfoForCustomer;
+  }
+
+  //console.log(`role: ${role}  idPK:${idPk}  `);
+
+  const result = await client.query(queryEmploymentInfo, [idPk]);
+  // console.log(result.rows[0]);
+  return result.rows[0];
+};
+
 const getTermListModel = async (client) => {
   const res = await client.query(getTermList);
   console.log(res);
@@ -128,4 +148,5 @@ export default {
   agreedTermModel,
   loginInfoModel,
   mussemActiveAreaModel,
+  getEmployInfoModel,
 };

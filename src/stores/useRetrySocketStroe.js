@@ -3,21 +3,24 @@ import { defineStore } from "pinia";
 import { io } from "socket.io-client";
 
 const IP = import.meta.env.VITE_ALLOW_IP;
-export const useSocketStore = defineStore("socket", {
+export const useRetrySocketStroe = defineStore("retrySocket", {
   state: () => ({
     socket: null,
   }),
 
   actions: {
-    connectSocket(role) {
-      this.socket = io(`https://${IP}:5000/activeMussem`, {
+    connectSocket({ userData, unComplteEmploy }) {
+      this.socket = io(`https://${IP}:5000/retrySocket`, {
         withCredentials: true,
+        auth: {
+          retryData: {
+            userData,
+            unComplteEmploy,
+          },
+        },
       });
 
-      this.socket.on("connect", () => {
-        // console.log("🧩 소켓 연결됨:", this.socket.id);
-        this.socket.emit("activeMussem", { role });
-      });
+      this.socket.on("connect", () => {});
     },
 
     disconnectSocket() {

@@ -47,40 +47,44 @@ export const loginUser = async (req, res) => {
     //   `로그인 성공정보 고유번회 ${userInfo.id}  아이디 ${userInfo.email}  권한 ${userInfo.role}`
     // );
 
+    const idPk = userInfo.id;
+    const unComplteEmploy = await userService.getEmployInfo(
+      idPk,
+      userInfo.role
+    );
+
+    let resData = {
+      loginSuccess: true,
+      message: "로그인 성공",
+      userDetail: {
+        id: userInfo.id,
+        email: userInfo.email,
+        role: userInfo.role,
+      },
+    };
+    if (unComplteEmploy != undefined) {
+      resData.unComplteEmploy = unComplteEmploy;
+    }
+
     if (userInfo.role === "mussem") {
       const mussemActiveArea = await userService.getMussemActiveArea(email);
-      console.log(mussemActiveArea.active_regions);
+      // console.log(mussemActiveArea.active_regions);
       req.session.user = {
         id: userInfo.id,
         email: userInfo.email,
         role: userInfo.role,
         active_regions: mussemActiveArea.active_regions,
       };
-      res.json({
-        loginSuccess: true,
-        message: "로그인 성공",
-        userDetail: {
-          id: userInfo.id,
-          email: userInfo.email,
-          role: userInfo.role,
-          active_regions: mussemActiveArea.active_regions,
-        },
-      });
+
+      resData.userDetail.active_regions = mussemActiveArea.active_regions;
+      res.json(resData);
     } else {
       req.session.user = {
         id: userInfo.id,
         email: userInfo.email,
         role: userInfo.role,
       };
-      res.json({
-        loginSuccess: true,
-        message: "로그인 성공",
-        userDetail: {
-          id: userInfo.id,
-          email: userInfo.email,
-          role: userInfo.role,
-        },
-      });
+      res.json(resData);
     }
   } catch (err) {
     console.error(err);
@@ -89,7 +93,7 @@ export const loginUser = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  // console.log("세션 ID:", req.sessionID);
+  console.log("로그 아웃 유저 세션 ID:", req.sessionID);
   // console.log("쿠키 상태:", req.cookies);
   // 세션 종료 후 connect.sid 쿠키 삭제
   res.clearCookie("connect.sid", {
@@ -98,11 +102,11 @@ export const logout = (req, res) => {
     secure: process.env.NODE_ENV === "production", // HTTPS 환경에서만 secure 쿠키
     sameSite: "strict", // SameSite 설정
   });
-  res.json({ success: true, message: "로그아웃 성공" });
-  // req.session.destroy(() => {
-  //   res.clearCookie("connect.sid"); // 기본 세션 쿠키명
-  //   res.json({ success: true, message: "로그아웃 성공" });
-  // });
+
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid"); // 기본 세션 쿠키명
+    res.json({ success: true, message: "로그아웃 성공" });
+  });
 };
 
 export const authcheck = async (req, res) => {

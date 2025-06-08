@@ -107,12 +107,11 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
   const isMatch = userStore.isMatch;
   const authUser = userStore.authUser;
-  console.log(`isMatch:  ${isMatch}`);
-  console.log(
-    `authUser: ${authUser != undefined ? JSON.stringify(authUser) : "비인증"}`
-  );
+  const unComplteEmploy = userStore.unComplteEmploy;
 
   if (isMatch) {
+    // 여기서 고용 매칭이후  예기치 못한 머슴의 웹브라우져끄기 새로고침등을 방지한다.
+
     if (authUser?.userDetail.role === "mussem" && to.name !== "MastView") {
       return next({ name: "MastView" }); // MussemMatchMap으로 이동
     }
@@ -132,8 +131,8 @@ router.beforeEach(async (to, from, next) => {
     const requiresAuth = to.meta.requiresAuth;
     const requiredRole = to.meta.role;
 
-    console.log(`isLoggedIn: ${isLoggedIn}`);
-    console.log(`userRole: ${userRole}`);
+    // console.log(`isLoggedIn: ${isLoggedIn}`);
+    // console.log(`userRole: ${userRole}`);
 
     if (requiresAuth && !isLoggedIn) {
       return next({ name: "loginPage" });
@@ -150,7 +149,7 @@ router.beforeEach(async (to, from, next) => {
 const checkAuth = async () => {
   // 로컬 스토리지에 인증 상태가 있으면 바로 반환
   const authUser = localStorage.getItem("user");
-  console.log(`userDetail:  ${authUser}`);
+  // console.log(`userDetail:  ${authUser}`);
   if (authUser && authUser != "undefined") {
     // console.log(JSON.parse(authUser));
 

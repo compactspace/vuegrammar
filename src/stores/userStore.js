@@ -5,6 +5,7 @@ export const useUserStore = defineStore("user", {
   state: () => ({
     authUser: null,
     isMatch: false,
+    unComplteEmploy: {},
   }),
   actions: {
     setUser(payload) {
@@ -12,9 +13,14 @@ export const useUserStore = defineStore("user", {
     },
     clearUser() {
       this.authUser = null;
+      this.isMatch = false;
+      this.unComplteEmploy = null;
     },
     setMatch(payload) {
       this.isMatch = payload;
+    },
+    setUnComplteEmploy(payload) {
+      this.unComplteEmploy = payload;
     },
   },
   getters: {

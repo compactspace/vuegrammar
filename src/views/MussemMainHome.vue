@@ -73,19 +73,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount ,watchEffect} from "vue";
 import TaskCard from "../components/MussemTaskCard/TaskCard.vue";
 import { useUserStore } from "../stores/userStore.js";
 import { useLocationStore } from "../stores/useLocationStore.js";
 import { useSocketStore } from "../stores/socketStore.js";
 import { useStoreSocketActivatigLocation } from "../stores/useStoreSocketActivatigLocation.js";
 import { useRouter } from 'vue-router';
+import { useRetrySocketStroe } from "../stores/useRetrySocketStroe";
 const router = useRouter();
 
 const userStore = useUserStore();
 const mussemActivatigLocation = useLocationStore();
 const socketActivatigLocation = useStoreSocketActivatigLocation();
 const socketStore = useSocketStore();
+const retrySocketStore=useRetrySocketStroe();
 
 const userName = userStore.authUser.userDetail.name || "철수 머슴"; // 이름 맞게 수정
 const role = userStore.authUser.userDetail.role;
@@ -151,7 +153,18 @@ function rejectHire() {
   alert("고용 요청을 거절했습니다.");
 }
 
+const ComplteEmployStatus=userStore.unComplteEmploy.status;
 onMounted(() => {
+ 
+  if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket===null){
+
+retrySocketStore.connectSocket();
+return;
+
+  }
+  if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket!=null){
+    return;
+  }
   // 로컬스토리지에서 지역정보 복원
   const userDataStr = localStorage.getItem("user");
   if (userDataStr) {
@@ -172,6 +185,12 @@ onMounted(() => {
     { id: 1, title: "📦 마포구 → 신촌 2km / 5,000원" },
     { id: 2, title: "🛒 편의점 심부름 / 3,000원" },
   ];
+
+  
+
+ 
+
+
 
   // 소켓 연결 - 실제는 toggleStatus 켜져야 연결 가능하나, 초기 이벤트 리스너 등록 위해 먼저 연결
   if(socketActivatigLocation.socketActivatigLocation===null){
@@ -224,6 +243,7 @@ watch(
   }
 );
 
+
 const toggleStatus = () => {
   if (!joinInfo.value.regions) {
     showError.value = true;
@@ -238,7 +258,7 @@ const toggleStatus = () => {
     socketStore.socket.emit("servant:join", joinInfo.value);
 
     // 머슴 방 생성 및 역할 등록
-      console.log("방 생성 에밋");
+    
     socketActivatigLocation.socketActivatigLocation.emit("createRoom", { role, roomId }, (response) => {
       console.log("방 생성 완료:", response);
     });
@@ -255,6 +275,37 @@ const  acceptTask=(taskId)=> {
   alert(`🛠️ 작업 ${taskId} 수락!`);
  
 }
+
+const unComplteEmployStatus = ref(null)
+
+// 2. unComplteEmploy.status 감시 (추가 가능)
+async function ensureSocketConnected() {
+  if (!retrySocketStore.socket) {  
+  retrySocketStore.connectSocket(); // connectSocket이 Promise 반환한다고 가정
+  }
+}
+
+// watch를 async 함수로 감싸기 어렵기 때문에 별도 함수로 분리 후 상태 변경 감시 시 호출
+watch(
+  () => userStore.unComplteEmploy?.status,
+  async (status) => {
+ 
+    if (status === "in_progress") {
+      await ensureSocketConnected();
+      if (retrySocketStore.socket) {
+        
+        const userData = userStore.authUser.userDetail;
+        const unComplteEmploy = userStore.unComplteEmploy;
+        const createRoomData = { userData, unComplteEmploy };
+        
+        retrySocketStore.socket.emit("createRetryRoom", createRoomData);
+        
+        router.push(`/mastMussem`);
+      }
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
