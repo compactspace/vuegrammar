@@ -1,10 +1,16 @@
 <template>
   <div class="container">
+  📍 고용주 위치: <strong>{{ employerResolvedAddress }}</strong>
     <section class="map-panel">
       <header class="map-header">
-        <span v-if="role === 'employer'">👷‍♂️ 고용주 실시간 위치 모니터링</span>
-        <span v-else-if="role === 'worker'">🧑‍🌾 머슴 실시간 위치 모니터링</span>
-        <span v-else>📍 실시간 위치 모니터링</span>
+        <div>
+          <span v-if="role === 'employer'">👷‍♂️ 고용주 실시간 위치 모니터링</span>
+          <span v-else-if="role === 'worker'">🧑‍🌾 머슴 실시간 위치 모니터링</span>
+          <span v-else>📍 실시간 위치 모니터링</span>
+        </div>
+        <div v-if="employerResolvedAddress" class="employer-address">
+          📍 고용주 위치: <strong>{{ employerResolvedAddress }}</strong>
+        </div>
       </header>
       <div id="map" class="map-container"></div>
     </section>
@@ -12,6 +18,7 @@
     <section class="log-panel">
       <h2>🧑‍🌾 머슴 접근 현황</h2>
       <div class="current-info" v-if="mussemLocation">
+        📍 고용주 위치: <strong>{{ employerResolvedAddress }}</strong>
         <p><strong>머슴 현재 위치:</strong> 위도 {{ mussemLocation.lat.toFixed(5) }}, 경도 {{ mussemLocation.lon.toFixed(5) }}</p>
         <p v-if="mussemAddress"><strong>주소:</strong> {{ mussemAddress }}</p>
         <p><strong>남은 거리:</strong> {{ remainingDistance }} m</p>
@@ -40,23 +47,21 @@ import { useLocationStore } from "../stores/useLocationStore.js";
 
 const retrySocketStroe = useRetrySocketStroe();
 const userStore = useUserStore();
+const locationStore = useLocationStore();
 
 const API_KEY = 'bf3a4b9e9374aa9b95f6e03305dd16eb';
 
-const role = userStore.role;
-const locationStore = useLocationStore();
-
-const employerLocation = computed(() => locationStore.userLocation);
+const role = userStore.authUser.userDetail.role;
 const mussemLocation = ref(null);
 const mussemAddress = ref('');
+const employerResolvedAddress = ref('');
 
 const locationLogs = ref([]);
 const recentLocations = computed(() => locationLogs.value.slice(-5));
 
-// 주소 캐싱
+// 캐시 및 거리 계산
 const addressCache = new Map();
 
-// 거리 계산
 function calcDistance(lat1, lon1, lat2, lon2) {
   const toRad = (deg) => (deg * Math.PI) / 180;
   const R = 6371000;
@@ -70,10 +75,12 @@ function calcDistance(lat1, lon1, lat2, lon2) {
 }
 
 const remainingDistance = computed(() => {
-  if (!mussemLocation.value || !employerLocation.value) return 0;
+  const employerLat = userStore.unComplteEmploy?.employer_latitude;
+  const employerLon = userStore.unComplteEmploy?.employer_longitude;
+  if (!mussemLocation.value || !employerLat || !employerLon) return 0;
   return Math.round(calcDistance(
-    employerLocation.value.lat,
-    employerLocation.value.lon,
+    employerLat,
+    employerLon,
     mussemLocation.value.lat,
     mussemLocation.value.lon
   ));
@@ -90,13 +97,13 @@ let marker = null;
 let geocoder = null;
 let isMapInitialized = false;
 
-// 주소 업데이트 함수
 const updateAddress = (lat, lon, index = null) => {
   if (!geocoder) return;
   const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
   if (addressCache.has(key)) {
-    const cachedAddress = addressCache.get(key);
-    if (index !== null) locationLogs.value[index].address = cachedAddress;
+    const cached = addressCache.get(key);
+    if (index !== null) locationLogs.value[index].address = cached;
+    else mussemAddress.value = cached;
     return;
   }
 
@@ -105,8 +112,46 @@ const updateAddress = (lat, lon, index = null) => {
       const address = result[0].address.address_name || '주소 정보 없음';
       addressCache.set(key, address);
       if (index !== null) locationLogs.value[index].address = address;
+      else mussemAddress.value = address;
     } else {
       console.error("역지오코딩 실패:", status);
+    }
+  });
+};
+
+const fetchEmployerAddressFromStore = () => {
+  const lat = userStore.unComplteEmploy?.employer_latitude;
+  const lon = userStore.unComplteEmploy?.employer_longitude;
+  console.log(`lat: ${lat} lon: ${lon}`)
+   // ✅ 강제로 초기화
+  if (!geocoder && window.kakao?.maps?.services) {
+    geocoder = new kakao.maps.services.Geocoder();
+  }
+
+  if (!geocoder) {
+    console.warn("geocoder 아직 준비 안됨");
+    return;
+  }
+
+  if (!lat || !lon) {
+    console.warn("위도/경도 없음");
+    return;
+  }
+
+
+  const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+  if (addressCache.has(key)) {
+    employerResolvedAddress.value = addressCache.get(key);
+    return;
+  }
+
+  geocoder.coord2Address(lon, lat, (result, status) => {
+    if (status === kakao.maps.services.Status.OK) {
+      const address = result[0].address.address_name || '주소 정보 없음';
+      addressCache.set(key, address);
+      employerResolvedAddress.value = address;
+    } else {
+      console.error("고용주 주소 변환 실패:", status);
     }
   });
 };
@@ -121,7 +166,6 @@ const initMap = (lat, lon) => {
     position,
     map,
   });
-
   geocoder = new kakao.maps.services.Geocoder();
 };
 
@@ -129,13 +173,13 @@ onMounted(() => {
   retrySocketStroe.socket.on("mussemLocation", (data) => {
     const { lat, lon } = data;
     mussemLocation.value = { lat, lon };
-    mussemAddress.value = ''; // 초기화 후 업데이트
+    mussemAddress.value = '';
 
     const newLog = { lat, lon, timestamp: Date.now(), address: '' };
     locationLogs.value.push(newLog);
 
-    updateAddress(lat, lon); // 현재 위치 주소
-    updateAddress(lat, lon, locationLogs.value.length - 1); // 최근 기록용 주소
+    updateAddress(lat, lon);
+    updateAddress(lat, lon, locationLogs.value.length - 1);
 
     if (!isMapInitialized && kakao?.maps) {
       initMap(lat, lon);
@@ -156,6 +200,7 @@ onMounted(() => {
         isMapInitialized = true;
         updateAddress(mussemLocation.value.lat, mussemLocation.value.lon);
       }
+      fetchEmployerAddressFromStore(); // ✅ 고용주 주소 가져오기
     };
     document.head.appendChild(script);
   } else {
@@ -164,6 +209,7 @@ onMounted(() => {
       isMapInitialized = true;
       updateAddress(mussemLocation.value.lat, mussemLocation.value.lon);
     }
+    fetchEmployerAddressFromStore(); // ✅ 고용주 주소 가져오기
   }
 });
 </script>

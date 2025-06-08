@@ -265,13 +265,15 @@ activitingLocation.on("connection", (socket) => {
 
   socket.on(
     "hireRequest",
-    ({ toMussemEmail, fromCustomerEmail, customerPk }) => {
+    ({ toMussemEmail, fromCustomerEmail, customerPk, lat, lon }) => {
       hireRequestLog(toMussemEmail, fromCustomerEmail, customerPk);
 
       //주의: 최초 컨넥션이 머슴 인경우에 한하여 s.data?.roomId 을 삽입하고
       // customer 인경우는 애초에 넣지 않고있으니 다음은 정확히 머슴 소켓을 찾는것임
       // 즉 소캣을 찾아 리턴함
       socket.data.customerPk = customerPk;
+      socket.data.lat = lat;
+      socket.data.lon = lon;
       const mussemSocket = [...activitingLocation.sockets.values()].find(
         (s) => s.data?.role === "mussem" && s.data?.roomId === toMussemEmail
       );
@@ -317,9 +319,14 @@ activitingLocation.on("connection", (socket) => {
         customerSocket.join(roomId);
         // 고객 소켓에도 매칭 방 저장
 
+        // socket.data.lat = lat;
+        //     socket.data.lon = lon;
+
         let matchingData = {
           employer_id: customerSocket.data.customerPk,
           mussem_id: mussemPk,
+          employer_latitude: socket.data.lat,
+          employer_longitude: socket.data.lon,
         };
 
         insertMatchingModel(matchingData);
