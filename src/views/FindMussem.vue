@@ -275,7 +275,15 @@ const  hireMussem=(mussem)=>{
  const toMussemEmail= mussem.email
  const fromCustomerEmail= userStore.authUser.userDetail.email
 
- const requsetData={toMussemEmail:toMussemEmail,fromCustomerEmail:fromCustomerEmail,customerPk:customerPk}
+ const lat=store.coordinates.latitude
+
+    const lon=store.coordinates.longitude
+
+ const requsetData={toMussemEmail:toMussemEmail,fromCustomerEmail:fromCustomerEmail,customerPk:customerPk,
+lat:lat,
+lon:lon
+
+ }
 
  socketActivatigLocation.socketActivatigLocation.emit('hireRequest',requsetData)
  
