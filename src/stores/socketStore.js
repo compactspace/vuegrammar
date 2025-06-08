@@ -19,11 +19,6 @@ export const useSocketStore = defineStore("socket", {
         // console.log("🧩 소켓 연결됨:", this.socket.id);
         this.socket.emit("activeMussem", { role });
       });
-
-      // 공통 이벤트 수신 예시
-      //   this.socket.on('notice:global', (msg) => {
-      //     console.log('📢 전체 공지:', msg);
-      //   });
     },
 
     disconnectSocket() {

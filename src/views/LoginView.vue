@@ -29,13 +29,15 @@ import axios from 'axios';
 import { useUserStore } from '../stores/userStore.js';
 import { useRouter } from 'vue-router';
 import { useSocketStore } from '../stores/socketStore.js';
-
+import { useRetrySocketStroe } from '../stores/useRetrySocketStroe.js';
 const username = ref('');
 const password = ref('');
 const error = ref('');
 const userStore = useUserStore();
 const socketStore=useSocketStore();
+const retrySocketStroe=useRetrySocketStroe();
 const router = useRouter();
+
 
 const handleLogin = async () => {
   error.value = '';
@@ -48,18 +50,33 @@ const handleLogin = async () => {
 
     const userData = response.data;
 
+    console.log(userData)
+
     if (userData.loginSuccess) {
-      userStore.setUser(userData);  
+
+      const unComplteEmploy=userData?.unComplteEmploy
       
-
+      userStore.setUser(userData);
       const role = userData.userDetail?.role;
-
+      if(unComplteEmploy!=undefined || unComplteEmploy!=null){
+       userStore.setUnComplteEmploy(unComplteEmploy);
+   
+      
+       
+       retrySocketStroe.connectSocket({ userData, unComplteEmploy });
+      //    if(role==="mussem"){      
+      //     router.push('/mussemMain');
+      //     return;
+      // }
+      //  if(role==="customer"){      
+      //     router.push('/mussemMain');
+      //     return;
+      // }
+      }
       if(role==="mussem"){      
           router.push('/mussemMain');
-        return;
+          return;
       }
-
-
       if (role === 'admin') {
         router.push('/admin');
         return;

@@ -59,22 +59,34 @@ import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { useMediaQuery } from "@vueuse/core"
 import { useUserStore } from "../stores/userStore.js"
-import axios from "axios";
+import { useSocketStore } from "../stores/socketStore.js"
+import { onMounted } from "vue"
+import { useRetrySocketStroe } from "../stores/useRetrySocketStroe.js"
+
+
+// store의 상태를 반응형 ref로 추출
+import { watch } from "vue"
+import axios from "axios"
+
 const userStore = useUserStore()
+const retrySocketStroe=useRetrySocketStroe();
 const router = useRouter()
 const isMobile = useMediaQuery("(max-width: 767px)")
 const menuOpen = ref(false)
-
+const   socketStroe=useSocketStore();
 const goToLogin = () => {
   router.push("/login")
 }
 
 const logout = async () => {  
   try {
-    // 여기서 axios 로그아웃 요청 넣어도 좋음
-    await axios.post('/users/logout')
-
+    // 여기서 axios 로그아웃 요청 넣어도 좋음   
+    axios.post(`users/logout`);
     userStore.clearUser()
+    socketStroe.disconnectSocket()
+    if(retrySocketStroe.socket!=null){
+      retrySocketStroe.disconnectSocket();
+    }
     router.push("/")
     menuOpen.value = false
   } catch (e) {
@@ -86,10 +98,25 @@ const handleLoginClick = () => {
   goToLogin()
   menuOpen.value = false
 }
-const handleLogoutClick = async () => {
-   await logout()
+const handleLogoutClick = () => {
+     
+  logout()
   menuOpen.value = false
 }
+
+
+watch(userStore.authUser, () => {
+  
+  console.log(userStore)
+// if(userStore.authUser){
+    
+//     const unComplteEmploy=userStore.unComplteEmploy
+//     const userData=userStore.authUser
+//     retrySocketStroe.emit('requestJoinRetryRoom')
+    
+    
+//   }
+});
 </script>
 
 <style scoped>

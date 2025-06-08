@@ -109,6 +109,18 @@ const getMussemActiveArea = async (email) => {
   return mussemActiveArea;
 };
 
+const getEmployInfo = async (idPk, role) => {
+  const client = await pgPool.connect();
+
+  const mussemActiveArea = await userModel.getEmployInfoModel(
+    client,
+    idPk,
+    role
+  );
+
+  return mussemActiveArea;
+};
+
 const checkEmailExistsService = async (email) => {
   let isExists = false;
   const client = await pgPool.connect();
@@ -150,4 +162,5 @@ export default {
   checkEmailExistsService,
   mussemSignupServcie,
   getMussemActiveArea,
+  getEmployInfo,
 };

@@ -102,22 +102,36 @@ const customerPk = userStore.authUser.userDetail.id;
 //  =>  enterRoomsAndRequestLocations :mussemList 를 받아 새로운 네임스페이스 activitingLocation 에 연결 시도+ 알파
 
 
-onMounted(() => {
-  
+onMounted( async () => {  
+
+
+
+
+
   if(socketStore.socket===null){
     socketStore.connectSocket(userStore.authUser.userDetail.role);
     
   }
-
-
   console.log(`널: ${socketActivatigLocation.socketActivatigLocation}`)
 
-  if(socketActivatigLocation.socketActivatigLocation===null){
-    
+  if(socketActivatigLocation.socketActivatigLocation===null){    
     socketActivatigLocation.connectSocket();
   }
-  fetchMussemLocations(currentRegionLabel.value);
-   //console.log(store.coordinates)
+  await fetchMussemLocations(currentRegionLabel.value).then(()=>{
+
+    socketActivatigLocation.socketActivatigLocation.off("forceExit"); // 👈 중복 제거!
+socketActivatigLocation.socketActivatigLocation.on("forceExit",(data)=>{
+      console.log(data)
+     fetchMussemLocations(currentRegionLabel.value);
+      
+     });
+
+  })
+  
+
+
+
+
 
 });
 
@@ -233,7 +247,7 @@ if (index !== -1) {
 }
 
 
-function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
+const  getDistanceFromLatLonInM=(lat1, lon1, lat2, lon2)=>{
   const R = 6371000; // 지구 반경(미터)
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -276,8 +290,7 @@ socketActivatigLocation.socketActivatigLocation.on('hireRequestSent', ({ to }) =
   });
 
   socketActivatigLocation.socketActivatigLocation.on('hireAccepted', ({ mussemEmail, roomId }) => {
-    alert(`🎉 ${mussemEmail} 머슴이 수락했습니다! 매칭 방: ${roomId}`);
-     
+    alert(`🎉 ${mussemEmail} 머슴이 수락했습니다! 매칭 방: ${roomId}`);     
     userStore.setMatch(true);
     router.push(`/matchCustomer`);
 
@@ -294,7 +307,7 @@ socketActivatigLocation.socketActivatigLocation.on('hireRequestSent', ({ to }) =
 
 
 
-function vehicleLabel(type) {
+const  vehicleLabel =(type)=>{
   switch (type) {
     case "walking":
       return "두 발로 직접 출동 🏃‍♂️ (근성甲)";
