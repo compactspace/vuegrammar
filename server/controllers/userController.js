@@ -89,20 +89,21 @@ export const loginUser = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  // console.log("세션 ID:", req.sessionID);
-  // console.log("쿠키 상태:", req.cookies);
-  // 세션 종료 후 connect.sid 쿠키 삭제
-  res.clearCookie("connect.sid", {
-    path: "/", // 쿠키의 경로를 명시적으로 설정 (기본값 '/'로 설정)
-    httpOnly: true, // 쿠키가 HTTP로만 접근 가능하도록 설정
-    secure: process.env.NODE_ENV === "production", // HTTPS 환경에서만 secure 쿠키
-    sameSite: "strict", // SameSite 설정
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("세션 제거 실패:", err);
+      return res.status(500).json({ success: false, message: "로그아웃 실패" });
+    }
+
+    res.clearCookie("connect.sid", {
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.json({ success: true, message: "로그아웃 성공" });
   });
-  res.json({ success: true, message: "로그아웃 성공" });
-  // req.session.destroy(() => {
-  //   res.clearCookie("connect.sid"); // 기본 세션 쿠키명
-  //   res.json({ success: true, message: "로그아웃 성공" });
-  // });
 };
 
 export const authcheck = async (req, res) => {

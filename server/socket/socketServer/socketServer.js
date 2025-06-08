@@ -11,23 +11,29 @@ import dotenv from "dotenv";
 import { registerServantEvents } from "../eventHandler/registerServantEvents.js";
 import { registerCustomerEvents } from "../eventHandler/registerCustomerEvents.js";
 //나중 let's encrypt 에서 인증서 발급받으면 https 를 적용하라
-
+import path from "path";
 import { insertMatchingModel } from "../model/employmentModel.js";
 
-const options = {
-  key: fs.readFileSync("C:/Windows/System32/localhost-key.pem"),
-  cert: fs.readFileSync("C:/Windows/System32/localhost.pem"),
+const certPath = 'C:/certs';const privateKey = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-key.pem'), 'utf8');
+const certificate = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-crt.pem'), 'utf8');
+const ca = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-chain.pem'), 'utf8');
+
+const credentialss = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca,
 };
 
 const app = express();
 //나중 let's encrypt 에서 인증서 발급받으면 https 를 적용하라.
-const socketServer = https.createServer(options, app);
+const socketServer = https.createServer(credentialss, app);
 
 //const socketServer = http.createServer(app);
 const IP = process.env.ALLOW_IP;
 // console.log(`IP: ${IP}`);
 const allowedOrigins = [
-  `https://${IP}:5173`,
+  
+  `https://mussem.kro.kr:4000`,
   `https://localhost:5173`,
   `http://${IP}:5173`,
   `http://localhost:5173`,
@@ -41,6 +47,7 @@ const io = new Server(socketServer, {
 });
 
 export const createSocketServer = () => {
+  console.log("✅ WebSocket 서버 5000 포트에서 실행 중");
   socketServer.listen(5000, function () {});
 };
 

@@ -59,7 +59,7 @@ import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { useMediaQuery } from "@vueuse/core"
 import { useUserStore } from "../stores/userStore.js"
-
+import axios from "axios";
 const userStore = useUserStore()
 const router = useRouter()
 const isMobile = useMediaQuery("(max-width: 767px)")
@@ -69,9 +69,11 @@ const goToLogin = () => {
   router.push("/login")
 }
 
-const logout = async () => {
+const logout = async () => {  
   try {
     // 여기서 axios 로그아웃 요청 넣어도 좋음
+    await axios.post('/users/logout')
+
     userStore.clearUser()
     router.push("/")
     menuOpen.value = false
@@ -84,8 +86,8 @@ const handleLoginClick = () => {
   goToLogin()
   menuOpen.value = false
 }
-const handleLogoutClick = () => {
-  logout()
+const handleLogoutClick = async () => {
+   await logout()
   menuOpen.value = false
 }
 </script>

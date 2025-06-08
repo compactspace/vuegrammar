@@ -7,7 +7,7 @@ import router from "./router";
 import axios from "axios";
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "/api"; // 프록시로 api 경로 전환
+// axios.defaults.baseURL = "/api"; // 프록시로 api 경로 전환
 const app = createApp(App);
 // Pinia 설정
 const pinia = createPinia();

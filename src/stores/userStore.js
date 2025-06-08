@@ -5,6 +5,7 @@ export const useUserStore = defineStore("user", {
   state: () => ({
     authUser: null,
     isMatch: false,
+   
   }),
   actions: {
     setUser(payload) {
@@ -12,6 +13,10 @@ export const useUserStore = defineStore("user", {
     },
     clearUser() {
       this.authUser = null;
+       this.isMatch = false;
+
+       // 위 2개 역시 상태를 저장하는 거라 로컬스토리지 리무브가 씹히는데.. 우선 내비둔다.
+// localStorage.removeItem('user');
     },
     setMatch(payload) {
       this.isMatch = payload;

@@ -20,21 +20,27 @@ import { createSocketServer } from "./socket/socketServer/socketServer.js";
 import sessionConfig from "./config/session.js";
 import userRoutes from "./routes/userRoutes.js";
 import { connectRedis, redisClient } from "./config/redis.js";
-
+import path from "path";
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+const certPath = 'C:/certs';
+const privateKey = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-key.pem'), 'utf8');
+const certificate = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-crt.pem'), 'utf8');
+const ca = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-chain.pem'), 'utf8');
 
-const options = {
-  key: fs.readFileSync("C:/Windows/System32/localhost-key.pem"),
-  cert: fs.readFileSync("C:/Windows/System32/localhost.pem"),
+const credentialss = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca,
 };
 
 async function startServer() {
   const IP = process.env.ALLOW_IP;
 
   const allowedOrigins = [
+    
     `https://${IP}:5173`,
     `https://localhost:5173`,
     `http://${IP}:5173`,
@@ -50,16 +56,25 @@ async function startServer() {
         credentials: true,
       })
     );
+    const __dirname = path.resolve();
+const clientBuildPath = path.join(__dirname, 'dist'); // 또는 'public', 실제 빌드 결과물 위치
+
+app.use(express.static(clientBuildPath));
+
+// SPA 라우팅 지원 (404 fallback → index.html)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
+});
 
     app.use(session(sessionConfig));
     app.use(cookieParser());
     app.use("/users", userRoutes);
 
-    const httpsServer = https.createServer(options, app);
+    const httpsServer = https.createServer(credentialss, app);
     createSocketServer();
 
-    httpsServer.listen(3000, () => {
-      console.log("🚀 HTTPS 서버가 3000번 포트에서 실행 중입니다!");
+    httpsServer.listen(4000, () => {
+      console.log("🚀 HTTPS 서버가 4000번 포트에서 실행 중입니다!");
     });
 
     // 종료 핸들러 설정
