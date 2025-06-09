@@ -154,6 +154,19 @@ const findByRegion = async (region) => {
   return await userModel.getMussemLocations(region);
 };
 
+const getChatLogService = async (req, res) => {
+  let client;
+
+  try {
+    client = await pgPool.connect();
+  } catch (err) {
+    console.log(err);
+  } finally {
+    client.release();
+    return await userModel.getChatLogModel(req, client);
+  }
+};
+
 export default {
   register,
   login,
@@ -163,4 +176,5 @@ export default {
   mussemSignupServcie,
   getMussemActiveArea,
   getEmployInfo,
+  getChatLogService,
 };

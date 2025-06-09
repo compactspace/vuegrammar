@@ -167,3 +167,8 @@ export const getMussemLocations = async (req, res) => {
     res.status(500).json({ success: false, message: "머슴 조회 실패" });
   }
 };
+
+export const getChatLog = async (req, res) => {
+  const chatRows = await userService.getChatLogService(req, res);
+  res.json(chatRows);
+};

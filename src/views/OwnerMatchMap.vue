@@ -38,31 +38,61 @@
   </div>
 
   <!-- ✅ 지도+현황 아래 고정 채팅창 (PC/모바일 공통) -->
-  <div class="chat-panel-inline">
-    <h3>💬 채팅창</h3>
-    <div class="chat-messages">
-      <p><strong>고용주:</strong> 머슴님, 조심히 와주세요!</p>
-      <p><strong>머슴:</strong> 알겠습니다, 곧 도착합니다.</p>
-    </div>
-    <input type="text" placeholder="메시지를 입력하세요..." />
+<div class="chat-panel-inline">
+  <h3>💬 채팅창</h3>
+  <div class="chat-messages" ref="chatMessagesContainer">
+    <p v-for="(msg, i) in chatMessages" :key="i">
+      <strong>{{ msg.role === 'customer' ? '고용주' : '머슴' }}:</strong>
+      {{ msg.message }}
+    </p>
   </div>
+ <div class="chat-form">
+  <input
+    type="text"
+    v-model="newMessage"
+    placeholder="메시지를 입력하세요..."
+    @keydown.enter.prevent="sendMessage"
+  />
+  <button
+    :disabled="!newMessage.trim()"
+    @click="sendMessage"
+    aria-label="메시지 전송"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="feather feather-send"
+    >
+      <line x1="22" y1="2" x2="11" y2="13"></line>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+    </svg>
+  </button>
+</div>
 
+</div>
   <!-- 하단 고정 로딩 바 -->
   <div class="bottom-status-bar-fixed" v-if="mussemLocation" :style="{ '--progress': progressRatio }">
     {{ distanceStatusMessage }} (남은 거리: {{ remainingDistance }}m)
   </div>
+
 </template>
 
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import axios from 'axios'
 import { useMediaQuery } from '@vueuse/core'
 import { useUserStore } from "../stores/userStore.js"
 import { useRetrySocketStroe } from '../stores/useRetrySocketStroe.js'
 import { useLocationStore } from "../stores/useLocationStore.js"
 
 const isMobile = useMediaQuery('(max-width: 768px)')
-
 const retrySocketStroe = useRetrySocketStroe()
 const userStore = useUserStore()
 const locationStore = useLocationStore()
@@ -70,15 +100,41 @@ const locationStore = useLocationStore()
 const API_KEY = 'bf3a4b9e9374aa9b95f6e03305dd16eb'
 
 const role = userStore.authUser.userDetail.role
+const myUserId = userStore.authUser.id
 const mussemLocation = ref(null)
 const mussemAddress = ref('')
 const employerResolvedAddress = ref('')
-
 const locationLogs = ref([])
 const recentLocations = computed(() => locationLogs.value.slice(-5))
-
+const chatMessages = ref([])
+const chatMessagesContainer = ref(null)
+const newMessage = ref('')
 const addressCache = new Map()
+const sendMessage = () => {
 
+
+  if (!newMessage.value.trim()) return
+
+//나중 그냥 소켓 도 만들어야함 에요 게니 네임스페이스 만들엇네
+
+let messageData={   employment_id :userStore.unComplteEmploy.id,
+    message: newMessage.value,
+    sender_id : userStore.authUser.userDetail.id,
+    role:userStore.authUser.userDetail.role,}
+
+
+  retrySocketStroe.socket.emit('chatMessage',messageData)
+ chatMessages.value.push(messageData)
+   newMessage.value = ''
+}
+
+// 새 메시지 추가 시 스크롤을 아래로 내리기
+watch(chatMessages, async () => {
+  await nextTick()
+  if (chatMessagesContainer.value) {
+    chatMessagesContainer.value.scrollTop = chatMessagesContainer.value.scrollHeight
+  }
+})
 function calcDistance(lat1, lon1, lat2, lon2) {
   const toRad = deg => (deg * Math.PI) / 180
   const R = 6371000
@@ -166,49 +222,6 @@ const initMap = (lat, lon) => {
   geocoder = new kakao.maps.services.Geocoder()
 }
 
-onMounted(() => {
-  retrySocketStroe.socket.on("mussemLocation", (data) => {
-    const { lat, lon } = data
-    mussemLocation.value = { lat, lon }
-    mussemAddress.value = ''
-    const newLog = { lat, lon, timestamp: Date.now(), address: '' }
-    locationLogs.value.push(newLog)
-
-    updateAddress(lat, lon)
-    updateAddress(lat, lon, locationLogs.value.length - 1)
-
-    if (!isMapInitialized && kakao?.maps) {
-      initMap(lat, lon)
-      isMapInitialized = true
-    } else if (marker && map) {
-      const newPosition = new kakao.maps.LatLng(lat, lon)
-      marker.setPosition(newPosition)
-      map.setCenter(newPosition)
-    }
-  })
-
-  if (typeof kakao === 'undefined' || !kakao.maps) {
-    const script = document.createElement('script')
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${API_KEY}&libraries=services`
-    script.onload = () => {
-      if (mussemLocation.value) {
-        initMap(mussemLocation.value.lat, mussemLocation.value.lon)
-        isMapInitialized = true
-        updateAddress(mussemLocation.value.lat, mussemLocation.value.lon)
-      }
-      fetchEmployerAddressFromStore()
-    }
-    document.head.appendChild(script)
-  } else {
-    if (mussemLocation.value) {
-      initMap(mussemLocation.value.lat, mussemLocation.value.lon)
-      isMapInitialized = true
-      updateAddress(mussemLocation.value.lat, mussemLocation.value.lon)
-    }
-    fetchEmployerAddressFromStore()
-  }
-})
-
 const initialDistance = ref(null)
 
 watch(remainingDistance, (newVal) => {
@@ -232,6 +245,63 @@ const distanceStatusMessage = computed(() => {
   if (p >= 0.2) return '🚶 착실히 이동 중입니다...'
   if (p > 0) return '🐢 이제 막 출발했어요'
   return '🕰️ 대기 중...'
+})
+
+onMounted(async () => {
+  retrySocketStroe.socket.on("mussemLocation", (data) => {
+    const { lat, lon } = data
+    mussemLocation.value = { lat, lon }
+    mussemAddress.value = ''
+    const newLog = { lat, lon, timestamp: Date.now(), address: '' }
+    locationLogs.value.push(newLog)
+
+    updateAddress(lat, lon)
+    updateAddress(lat, lon, locationLogs.value.length - 1)
+
+    if (!isMapInitialized && kakao?.maps) {
+      initMap(lat, lon)
+      isMapInitialized = true
+    } else if (marker && map) {
+      const newPosition = new kakao.maps.LatLng(lat, lon)
+      marker.setPosition(newPosition)
+      map.setCenter(newPosition)
+    }
+  })
+
+  // ✅ 채팅 내역 불러오기
+  try {
+    const employmentId = userStore.unComplteEmploy.id
+    const res = await axios.get(`/users/employment/${employmentId}/chat`)
+      console.log(res.data)
+    chatMessages.value = res.data
+  } catch (error) {
+    console.error('채팅 내역 로딩 실패:', error)
+  }
+
+  // 지도 SDK 불러오기
+  if (typeof kakao === 'undefined' || !kakao.maps) {
+    const script = document.createElement('script')
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${API_KEY}&libraries=services`
+    script.onload = () => {
+      if (mussemLocation.value) {
+        initMap(mussemLocation.value.lat, mussemLocation.value.lon)
+        isMapInitialized = true
+        updateAddress(mussemLocation.value.lat, mussemLocation.value.lon)
+      }
+      fetchEmployerAddressFromStore()
+    }
+    document.head.appendChild(script)
+  } else {
+    if (mussemLocation.value) {
+      initMap(mussemLocation.value.lat, mussemLocation.value.lon)
+      isMapInitialized = true
+      updateAddress(mussemLocation.value.lat, mussemLocation.value.lon)
+    }
+    fetchEmployerAddressFromStore()
+  }
+  retrySocketStroe.socket.on("chatMessage", (msg) => {
+    chatMessages.value.push(msg);
+  });
 })
 </script>
 
@@ -398,6 +468,80 @@ const distanceStatusMessage = computed(() => {
   );
   z-index: 999;
 }
+
+
+.chat-messages {
+  max-height: 100px; /* 원하는 높이 조절 가능 */
+  overflow-y: auto;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #444;
+  padding-right: 8px; /* 스크롤 나올 때 텍스트 안 겹치게 */
+  scrollbar-width: thin;
+  scrollbar-color: #00c7ae #eee;
+}
+
+/* 크롬, 엣지, 사파리 스크롤바 스타일 */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #eee;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: #00c7ae;
+  border-radius: 3px;
+}
+
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-form input[type="text"] {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.chat-form input[type="text"]:focus {
+  border-color: #00c7ae;
+}
+
+.chat-form button {
+  background-color: #00c7ae;
+  border: none;
+  color: white;
+  width: 44px;
+  height: 40px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.chat-form button:disabled {
+  background-color: #a0d9d3;
+  cursor: not-allowed;
+  color: #eee;
+}
+
+.chat-form button:hover:not(:disabled) {
+  background-color: #009e8c;
+}
+
 
 /* 모바일 대응 */
 @media (max-width: 768px) {

@@ -69,7 +69,7 @@ const handleCheckLocation = (path) => {
 
 const retryJoinRoom = () => {
   const employer_id = userStore.authUser.userDetail.id;
-  console.log(`employer_id: ${employer_id}`);
+  // console.log(`employer_id: ${employer_id}`);
 
   // 이벤트 리스너 중복 방지
   retrySocketStore.socket.off("successRequest");
@@ -80,6 +80,7 @@ const retryJoinRoom = () => {
 
   // 성공 응답 리스너 (한 번만 등록)
   retrySocketStore.socket.on("successRequest", (data) => {
+    console.log(data)
     const { retryJoinRoom } = data;
     if (retryJoinRoom === "success") {
       alert("하하하");

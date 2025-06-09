@@ -1,3 +1,5 @@
+import { insertChatModel } from "../model/chatModel.js";
+
 export const retrySocketRegisterEvent = (socket, retrySocket) => {
   // 최악의 경우로 2가지 케이스로
 
@@ -29,6 +31,7 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
   socket.on("acceptRequest", (data) => {
     for (const [id, s] of retrySocket.sockets) {
       if (s.data?.role === "customer") {
+        s.roomId = `retry_${socket.data.email}`;
         s.join(`retry_${data.email}`);
         retrySocket.to(id).emit("successRequest", { retryJoinRoom: "success" });
       }
@@ -44,7 +47,7 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
     console.log(`mussemEmail: ${mussemEmail} employer_id:${employer_id} `);
 
     socket.join(`retry_${mussemEmail}`);
-
+    socket.roomId = `retry_${mussemEmail}`;
     for (const [id, s] of retrySocket.sockets) {
       if (s.data?.role === "customer") {
         s.join(`retry_${mussemEmail}`); // ✅ 고용주 소켓을 방에 참여시킴
@@ -83,5 +86,16 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
 
     // 선택사항: 배달부 자신도 위치 저장
     socket.data.latestLocation = location;
+  });
+
+  socket.on("chatMessage", (data) => {
+    console.log(data);
+    //1 대화를 db에 넣을것
+    insertChatModel(data);
+    //2. 상대방을 찾아 브로드 케스트 할것
+    socket.to(socket.roomId).emit("chatMessage", data);
+
+    //3. 인설트가 되었다고 다시 셀렉트를 태우지 말고 프론트 단에서
+    // 형식에 맞추어 반응형 객체에 푸쉬 해주자.
   });
 };
