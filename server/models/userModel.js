@@ -19,6 +19,9 @@ import {
   employInfoForCustomer,
   employInfoForMussem,
 } from "../sql/users/login.js";
+
+import { getDefaultChatList } from "../sql/chat/chat.js";
+
 // __dirname 대체 (ESM)
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);
@@ -135,6 +138,15 @@ export const checkEmailExistsModel = async (client, email) => {
   return result.rows[0].exists; // true or false
 };
 
+export const getChatLogModel = async (req, client) => {
+  const { employmentId } = req.params;
+  const { rows } = await client.query(getDefaultChatList, [employmentId]);
+  console.log("---채틸기록--");
+  console.log(rows);
+  console.log("--채틸기ㅗㄱ 종료---");
+  return rows; // true or false
+};
+
 export default {
   getClient,
   createUserModel,
@@ -149,4 +161,5 @@ export default {
   loginInfoModel,
   mussemActiveAreaModel,
   getEmployInfoModel,
+  getChatLogModel,
 };
