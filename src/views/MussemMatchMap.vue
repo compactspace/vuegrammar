@@ -146,8 +146,10 @@ onMounted(async () => {
   }
 
   try {
+   
     const employmentId = userStore.unComplteEmploy.id;
     const res = await axios.get(`/users/employment/${employmentId}/chat`);
+    alert(JSON.stringify(res))
     chatMessages.value = res.data;
   } catch (error) {
     console.error("채팅 내역 로딩 실패:", error);

@@ -156,13 +156,13 @@ const findByRegion = async (region) => {
 
 const getChatLogService = async (req, res) => {
   let client;
-
   try {
     client = await pgPool.connect();
   } catch (err) {
     console.log(err);
   } finally {
     client.release();
+    console.log(await userModel.getChatLogModel(req, client))
     return await userModel.getChatLogModel(req, client);
   }
 };

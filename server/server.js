@@ -61,14 +61,14 @@ const clientBuildPath = path.join(__dirname, 'dist'); // 또는 'public', 실제
 
 app.use(express.static(clientBuildPath));
 
-// SPA 라우팅 지원 (404 fallback → index.html)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
 
     app.use(session(sessionConfig));
     app.use(cookieParser());
     app.use("/users", userRoutes);
+// SPA 라우팅 지원 (404 fallback → index.html)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
+});
 
     const httpsServer = https.createServer(credentialss, app);
     createSocketServer();
