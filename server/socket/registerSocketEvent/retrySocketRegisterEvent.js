@@ -1,5 +1,5 @@
 import { insertChatModel } from "../model/chatModel.js";
-
+import socketLog from "../socketLog/socketLog.js";
 export const retrySocketRegisterEvent = (socket, retrySocket) => {
   // 최악의 경우로 2가지 케이스로
 
@@ -11,9 +11,6 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
   socket.on("requestJoinRetryRoom", (data) => {
     for (const [id, s] of retrySocket.sockets) {
       if (id != socket.id && s.data?.role === "mussem") {
-        console.log(`id: ${id}  socket.id:${socket.id} `);
-
-        console.log(`머슴 이메일 ID: ${JSON.stringify(s.data)}`);
         // 여기서 원하는 로직 실행
         const email = s.data.email;
         const clientSocket = socket;
@@ -33,6 +30,7 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
       if (s.data?.role === "customer") {
         s.roomId = `retry_${socket.data.email}`;
         s.join(`retry_${data.email}`);
+        socketLog.printRoomsAndMembers(retrySocket);
         retrySocket.to(id).emit("successRequest", { retryJoinRoom: "success" });
       }
     }
@@ -47,6 +45,7 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
     console.log(`mussemEmail: ${mussemEmail} employer_id:${employer_id} `);
 
     socket.join(`retry_${mussemEmail}`);
+    socketLog.printRoomsAndMembers(retrySocket);
     socket.roomId = `retry_${mussemEmail}`;
     for (const [id, s] of retrySocket.sockets) {
       if (s.data?.role === "customer") {
@@ -63,9 +62,9 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
  @param location={ lat: latitude, lon: longitude }
 */
   socket.on("mussemLocationUpdate", (location) => {
-    console.log(location);
+    // console.log(location);
     const mussemRoom = socket.data.email; // 예: "match_customerEmail_mussemEmail"
-    console.log(`mussemRoom: ${mussemRoom}`);
+    // console.log(`mussemRoom: ${mussemRoom}`);
     if (!mussemRoom) {
       console.log("배달부 매칭 방이 없습니다.");
       return;
@@ -73,12 +72,12 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
 
     // 매칭 방 내 소켓 중 고객(role="customer")만 골라서 위치 전달
     const roomMembers = retrySocket.adapter.rooms.get(`retry_${mussemRoom}`);
-    console.log(roomMembers);
+    // console.log(roomMembers);
     if (!roomMembers) return;
 
     for (const clientId of roomMembers) {
       const clientSocket = retrySocket.sockets.get(clientId);
-      console.log(clientSocket.data);
+      // console.log(clientSocket.data);
       if (clientSocket && clientSocket.data?.role === "customer") {
         clientSocket.emit("mussemLocation", location);
       }
@@ -97,5 +96,9 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
 
     //3. 인설트가 되었다고 다시 셀렉트를 태우지 말고 프론트 단에서
     // 형식에 맞추어 반응형 객체에 푸쉬 해주자.
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`👢 고객(${socket.id}) 강제 방 나감`);
   });
 };
