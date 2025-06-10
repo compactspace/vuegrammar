@@ -1,12 +1,11 @@
 // 👇 가장 먼저 추가하세요
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
-
 
 import fs from "fs";
 import https from "https";
@@ -19,7 +18,10 @@ import cookieParser from "cookie-parser";
 import { createSocketServer } from "./socket/socketServer/socketServer.js";
 import sessionConfig from "./config/session.js";
 import userRoutes from "./routes/userRoutes.js";
+import customerRouter from "./routes/customerRouter.js";
+import mussemRouter from "./routes/mussemRouter.js";
 import { connectRedis, redisClient } from "./config/redis.js";
+import { authMiddleware } from "./authMiddleware/authMiddleware.js";
 import path from "path";
 dotenv.config();
 
@@ -64,7 +66,10 @@ app.use(express.static(clientBuildPath));
 
     app.use(session(sessionConfig));
     app.use(cookieParser());
+    app.use(authMiddleware);
     app.use("/users", userRoutes);
+    app.use("/customer", customerRouter);
+    app.use("/mussem", mussemRouter);
 // SPA 라우팅 지원 (404 fallback → index.html)
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
@@ -100,8 +105,6 @@ app.get('*', (req, res) => {
         process.exit(0);
       });
     });
-
-    
   } catch (error) {
     console.error("서버 시작 중 에러 발생:", error);
     process.exit(1);

@@ -21,5 +21,5 @@ router.get("/getTermList", getTermList);
 router.post("/check-email", checkEmailExistsController);
 router.post("/mussemSignup", mussemSignup);
 router.get("/mussem-locations", getMussemLocations);
-router.get("/employment/:employmentId/chat", getChatLog);
+
 export default router;

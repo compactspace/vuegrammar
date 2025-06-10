@@ -40,7 +40,7 @@ export const loginUser = async (req, res) => {
   const ip = req.ip;
 
   const { email, password } = req.body;
-  console.log(`로그인 시도 IP: ${ip}, 이메일: ${email}`);
+  // console.log(`로그인 시도 IP: ${ip}, 이메일: ${email}`);
   try {
     const userInfo = await userService.login(email, password);
     if (!userInfo) return res.status(401).json({ message: "로그인 실패" });

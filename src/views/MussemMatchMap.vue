@@ -149,7 +149,7 @@ onMounted(async () => {
   try {
    
     const employmentId = userStore.unComplteEmploy.id;
-    const res = await axios.get(`/users/employment/${employmentId}/chat`);
+    const res = await axios.get(`/mussem/employment/${employmentId}/chat`);
 
     chatMessages.value = res.data;
   } catch (error) {
