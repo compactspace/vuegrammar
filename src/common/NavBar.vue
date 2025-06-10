@@ -4,6 +4,7 @@
     <div v-if="!isMobile" class="nav-links">
       <template v-if="!userStore.isLoggedIn">
         <router-link to="/" class="nav-link">🏠 홈</router-link>
+          
         <button @click="goToLogin" class="nav-btn">🔐 로그인</button>
       </template>
 
@@ -11,6 +12,7 @@
         <router-link to="/mussem" class="nav-link">🧑‍🌾 대시보드</router-link>
         <router-link to="/mussem/my-jobs" class="nav-link">🧾 내 작업 내역</router-link>
         <router-link to="/mussem/settings" class="nav-link">⚙️ 설정</router-link>
+        <button @click="sessionTest" class="nav-btn">🔐 세션테스트</button>
         <button @click="logout" class="nav-btn">🚪 로그아웃</button>
       </template>
 
@@ -18,6 +20,7 @@
         <router-link to="/" class="nav-link">🏠 홈</router-link>
         <router-link to="/order" class="nav-link">📦 주문</router-link>
         <router-link to="/mypage" class="nav-link">👤 마이페이지</router-link>
+        <button @click="sessionTest" class="nav-btn">🔐 세션테스트</button>
         <button @click="logout" class="nav-btn">🚪 로그아웃</button>
       </template>
     </div>
@@ -40,6 +43,7 @@
           <router-link to="/mussem" class="nav-link" @click="menuOpen = false">🧑‍🌾 대시보드</router-link>
           <router-link to="/mussem/my-jobs" class="nav-link" @click="menuOpen = false">🧾 내 작업 내역</router-link>
           <router-link to="/mussem/settings" class="nav-link" @click="menuOpen = false">⚙️ 설정</router-link>
+          <button @click="sessionTest" class="nav-btn">🔐 세션테스트</button>
           <button @click="handleLogoutClick" class="nav-btn">🚪 로그아웃</button>
         </template>
 
@@ -47,6 +51,7 @@
           <router-link to="/" class="nav-link" @click="menuOpen = false">🏠 홈</router-link>
           <router-link to="/order" class="nav-link" @click="menuOpen = false">📦 주문</router-link>
           <router-link to="/mypage" class="nav-link" @click="menuOpen = false">👤 마이페이지</router-link>
+          <button @click="sessionTest" class="nav-btn">🔐 세션테스트</button>
           <button @click="handleLogoutClick" class="nav-btn">🚪 로그아웃</button>
         </template>
       </div>
@@ -76,6 +81,14 @@ const menuOpen = ref(false)
 const   socketStroe=useSocketStore();
 const goToLogin = () => {
   router.push("/login")
+}
+
+
+
+const sessionTest = () => {
+ axios.post("/customer/sessionTest")
+
+
 }
 
 const logout = async () => {

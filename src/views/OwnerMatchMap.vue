@@ -316,7 +316,7 @@ onMounted(async () => {
   // ✅ 채팅 내역 불러오기
   try {
     const employmentId = userStore.unComplteEmploy.id
-    const res = await axios.get(`/users/employment/${employmentId}/chat`)
+    const res = await axios.get(`/customer/employment/${employmentId}/chat`)
      
     chatMessages.value = res.data
   } catch (error) {

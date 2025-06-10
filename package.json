@@ -25,6 +25,7 @@
     "mariadb": "^3.4.2",
     "morgan": "^1.10.0",
     "mysql2": "^3.14.1",
+    "path-to-regexp": "^8.2.0",
     "pg": "^8.16.0",
     "pinia": "^3.0.2",
     "pinia-plugin-persistedstate": "^4.2.0",
