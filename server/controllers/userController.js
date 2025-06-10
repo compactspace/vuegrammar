@@ -37,15 +37,13 @@ export const mussemSignup = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const ip = req.ip;
 
+  const { email, password } = req.body;
+  console.log(`로그인 시도 IP: ${ip}, 이메일: ${email}`);
   try {
     const userInfo = await userService.login(email, password);
     if (!userInfo) return res.status(401).json({ message: "로그인 실패" });
-
-    // console.log(
-    //   `로그인 성공정보 고유번회 ${userInfo.id}  아이디 ${userInfo.email}  권한 ${userInfo.role}`
-    // );
 
     const idPk = userInfo.id;
     const unComplteEmploy = await userService.getEmployInfo(

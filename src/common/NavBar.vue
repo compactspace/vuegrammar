@@ -78,15 +78,20 @@ const goToLogin = () => {
   router.push("/login")
 }
 
-const logout = async () => {  
+const logout = async () => {
+
   try {
     // 여기서 axios 로그아웃 요청 넣어도 좋음   
-    axios.post(`users/logout`);
+     await axios.post(`users/logout`).then((res)=>{
+
+      csonole.log(res)
+     }).catch((err)=>{console.log(err)})
     userStore.clearUser()
     socketStroe.disconnectSocket()
     if(retrySocketStroe.socket!=null){
       retrySocketStroe.disconnectSocket();
     }
+  
     router.push("/")
     menuOpen.value = false
   } catch (e) {

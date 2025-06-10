@@ -141,6 +141,7 @@ onMounted(async () => {
 
   if (retrySocketStroe.socket) {
     retrySocketStroe.socket.on("acceptRequest", (data) => {
+    //  console.log("새로고침의 요청 받음")
       retrySocketStroe.socket.emit("acceptRequest", data);
     });
   }
@@ -149,7 +150,7 @@ onMounted(async () => {
    
     const employmentId = userStore.unComplteEmploy.id;
     const res = await axios.get(`/users/employment/${employmentId}/chat`);
-    alert(JSON.stringify(res))
+
     chatMessages.value = res.data;
   } catch (error) {
     console.error("채팅 내역 로딩 실패:", error);

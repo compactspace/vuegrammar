@@ -67,7 +67,7 @@ const handleCheckLocation = (path) => {
 }
 
 
-const retryJoinRoom = () => {
+const retryJoinRoom = () => { 
   const employer_id = userStore.authUser.userDetail.id;
   // console.log(`employer_id: ${employer_id}`);
 
@@ -100,13 +100,25 @@ const retryJoinRoom = () => {
 onMounted(()=>{
    const ComplteEmployStatus=userStore?.unComplteEmploy?.status;
  
+   const   userData=userStore?.authUser
+    console.log(userData)
+  const   unComplteEmploy=userStore?.unComplteEmploy
+  let retryData={}
+  retryData.userData=userData;
+  retryData.unComplteEmploy=unComplteEmploy;
+   
+   
+ 
    if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket===null){
-
-retrySocketStore.connectSocket();
-return;
+   
+// 이상한 패턴이네
+    retrySocketStore.connectSocket(retryData);
+    return;
 
   }
-  if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket!=null){
+  if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket.connected!=true){
+    
+      retrySocketStore.connectSocket(retryData);
     const   employer_id =userStore.authUser.userDetail.id
     console.log(`employer_id: ${employer_id}`)
     retrySocketStore.socket.on(`retry_target_${employer_id}`,(data)=>{

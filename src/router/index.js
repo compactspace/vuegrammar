@@ -93,7 +93,7 @@ const routes = [
     component: NoPermission,
   },
   {
-    path: "/:pathMatch(.*)*", // 404 페이지
+    path: "/:pathMatch(.*)*", // 이상항 라우터 이동시 404 페이지
     redirect: "/no-permission", // 권한이 없는 페이지로 리다이렉트
   },
 ];
@@ -130,9 +130,6 @@ router.beforeEach(async (to, from, next) => {
 
     const requiresAuth = to.meta.requiresAuth;
     const requiredRole = to.meta.role;
-
-    // console.log(`isLoggedIn: ${isLoggedIn}`);
-    // console.log(`userRole: ${userRole}`);
 
     if (requiresAuth && !isLoggedIn) {
       return next({ name: "loginPage" });

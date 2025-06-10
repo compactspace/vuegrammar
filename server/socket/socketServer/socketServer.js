@@ -1,5 +1,8 @@
 import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
+
+import socketLog from "../socketLog/socketLog.js";
+
 //나중 let's encrypt 에서 인증서 발급받으면 https 를 적용하라.
 dotenv.config();
 import https from "https";
@@ -266,8 +269,8 @@ activitingLocation.on("connection", (socket) => {
     }
 
     printConnectedactivitingLocation();
-    printRoomsAndMembers();
-    printAllSocketSummary();
+    // printRoomsAndMembers();
+    socketLog.printAllSocketSummary(activitingLocation);
   });
 
   socket.on(
@@ -503,50 +506,10 @@ const printConnectedactivitingLocation = () => {
   }
 };
 
-// 방별 소켓 참여자 리스트 보기
-const printRoomsAndMembers = () => {
-  console.log("\n📦 [활성 방 목록 및 멤버 정보]");
-  const rooms = activitingLocation.adapter.rooms;
-
-  if (rooms.size === 0) {
-    console.log("❗ 현재 존재하는 방이 없습니다.");
-    return;
-  }
-
-  for (const [roomId, clients] of rooms) {
-    // rooms Map은 roomId와 Set<socket.id>를 가지고 있음
-    // 단, socket.id도 roomId로 사용되기 때문에 필터링 필요
-    if (activitingLocation.sockets.has(roomId)) continue; // socket.id인 경우 skip
-
-    console.log(`🏠 방: "${roomId}" | 참여자 수: ${clients.size}`);
-    for (const clientId of clients) {
-      const clientSocket = activitingLocation.sockets.get(clientId);
-      const role = clientSocket?.data?.role || "unknown";
-      console.log(`  └─ 👤 소켓 ID: ${clientId} | 역할: ${role}`);
-    }
-  }
-};
-
-// 전체 소켓 접속 현황 보기
-const printAllSocketSummary = () => {
-  console.log("\n🌐 [현재 /activitingLocation 전체 소켓 요약]");
-
-  if (activitingLocation.sockets.size === 0) {
-    console.log("❗ 현재 연결된 소켓이 없습니다.");
-    return;
-  }
-
-  for (const [sockId, socket] of activitingLocation.sockets) {
-    const role = socket.data?.role || "unknown";
-    const roomId = socket.data?.roomId || "none";
-    console.log(`- ${sockId} | role: ${role} | roomId: ${roomId}`);
-  }
-};
-
 const retrySocket = io.of("/retrySocket");
 
 retrySocket.on("connection", (socket) => {
-  // console.log(socket.handshake.auth);
+  //console.log(socket.handshake.auth);
 
   const { retryData } = socket.handshake.auth;
 
@@ -557,4 +520,5 @@ retrySocket.on("connection", (socket) => {
   socket.data = { role, email, employer_id, mussem_id };
 
   retrySocketRegisterEvent(socket, retrySocket);
+  socketLog.printAllSocketSummary(retrySocket);
 });

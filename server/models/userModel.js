@@ -141,9 +141,7 @@ export const checkEmailExistsModel = async (client, email) => {
 export const getChatLogModel = async (req, client) => {
   const { employmentId } = req.params;
   const { rows } = await client.query(getDefaultChatList, [employmentId]);
-  console.log("---채틸기록--");
-  console.log(rows);
-  console.log("--채틸기ㅗㄱ 종료---");
+
   return rows; // true or false
 };
 

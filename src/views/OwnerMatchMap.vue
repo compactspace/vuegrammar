@@ -248,6 +248,51 @@ const distanceStatusMessage = computed(() => {
 })
 
 onMounted(async () => {
+
+ const ComplteEmployStatus=userStore?.unComplteEmploy?.status;
+ 
+   const   userData=userStore?.authUser
+    console.log(userData)
+  const   unComplteEmploy=userStore?.unComplteEmploy
+  let retryData={}
+  retryData.userData=userData;
+  retryData.unComplteEmploy=unComplteEmploy;
+   
+   
+ 
+   if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStroe.socket===null){
+   // retrySocketStroe.socket.off("successRequest");
+
+    retrySocketStroe.connectSocket(retryData);
+    const   employer_id =userStore.authUser.userDetail.id
+    console.log(`employer_id: ${employer_id}`)
+    retrySocketStroe.socket.emit(`requestJoinRetryRoom`,(data)=>{
+      const {retryJoinRoom}=data;
+
+
+
+// 성공 응답 리스너 (한 번만 등록)
+ if(retryJoinRoom==="success"){
+  retrySocketStroe.socket.on("successRequest", (data) => {
+  console.log('재연결 성공')
+  });    
+         
+      }else{
+       // 실패 응답 리스너 (한 번만 등록)
+  retrySocketStroe.socket.on("notFoundMussem", (data) => {
+   
+   console.log(notFoundMussem || "머슴이 먹튀");
+  });
+
+      }
+    })
+
+  }
+
+
+
+
+
   retrySocketStroe.socket.on("mussemLocation", (data) => {
     const { lat, lon } = data
     mussemLocation.value = { lat, lon }
@@ -272,7 +317,7 @@ onMounted(async () => {
   try {
     const employmentId = userStore.unComplteEmploy.id
     const res = await axios.get(`/users/employment/${employmentId}/chat`)
-      console.log(res.data)
+     
     chatMessages.value = res.data
   } catch (error) {
     console.error('채팅 내역 로딩 실패:', error)
