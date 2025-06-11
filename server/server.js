@@ -20,9 +20,11 @@ import sessionConfig from "./config/session.js";
 import userRoutes from "./routes/userRoutes.js";
 import customerRouter from "./routes/customerRouter.js";
 import mussemRouter from "./routes/mussemRouter.js";
+import authRouter from "./routes/authRouter.js";
 import { connectRedis, redisClient } from "./config/redis.js";
 import { authMiddleware } from "./authMiddleware/authMiddleware.js";
 import path from "path";
+import { checkSessionStatus } from "./checkSessionStatus/checkSessionStatus.js";
 dotenv.config();
 
 const app = express();
@@ -64,9 +66,11 @@ const clientBuildPath = path.join(__dirname, 'dist'); // 또는 'public', 실제
 app.use(express.static(clientBuildPath));
 
 
-    app.use(session(sessionConfig));
     app.use(cookieParser());
+    app.use(session(sessionConfig));
+    app.use(checkSessionStatus);
     app.use(authMiddleware);
+    app.use("/auth", authRouter);
     app.use("/users", userRoutes);
     app.use("/customer", customerRouter);
     app.use("/mussem", mussemRouter);
