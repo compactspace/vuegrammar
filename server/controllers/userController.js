@@ -1,5 +1,5 @@
 import userService from "../services/userService.js";
-
+import { authUser } from "../authUtil/authLogin/authLogin.js";
 export const registerUser = async (req, res) => {
   try {
     const user = await userService.register(req.body);
@@ -82,6 +82,13 @@ export const loginUser = async (req, res) => {
         email: userInfo.email,
         role: userInfo.role,
       };
+
+      authUser.set({
+        email: userInfo.email,
+        role: userInfo.role,
+        ip: ip,
+      });
+
       res.json(resData);
     }
   } catch (err) {

@@ -4,7 +4,7 @@
     <p v-if="!isMobile">이 페이지에 접근하려면 로그인하거나 권한이 필요합니다.</p>
     <p v-if="isMobile">로그인 후 이 페이지에 접근할 수 있습니다.</p>
     
-    <router-link to="/login" class="btn">로그인 페이지로 가기</router-link>
+    <router-link to="/" class="btn">홈으로 돌아가기</router-link>
   </div>
 </template>
 
