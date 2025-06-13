@@ -7,7 +7,7 @@ import router from "./router";
 import axios from "axios";
 import { useUserStore } from "./stores/userStore";
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "/api"; // 프록시로 api 경로 전환
+//axios.defaults.baseURL = "/api"; // 프록시로 api 경로 전환
 // axios 응답 인터셉터 등록
 
 // 주의해라
