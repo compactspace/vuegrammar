@@ -1,4 +1,8 @@
 import { insertChatModel } from "../model/chatModel.js";
+import {
+  updateMatchingCanceledModel,
+  insertCancledInfoModel,
+} from "../model/employmentModel.js";
 import socketLog from "../socketLog/socketLog.js";
 export const retrySocketRegisterEvent = (socket, retrySocket) => {
   // 최악의 경우로 2가지 케이스로
@@ -96,6 +100,19 @@ export const retrySocketRegisterEvent = (socket, retrySocket) => {
 
     //3. 인설트가 되었다고 다시 셀렉트를 태우지 말고 프론트 단에서
     // 형식에 맞추어 반응형 객체에 푸쉬 해주자.
+  });
+
+  socket.on("updateStatus", (data) => {
+    console.log(data);
+    // 나중 data로 받아서 canceled, complete로
+
+    // employment 테이블  업데이트
+    updateMatchingCanceledModel(data);
+
+    // ,employment_cancel 인설트
+    insertCancledInfoModel(data);
+    socket.to(socket.roomId).emit("updateStatus", { pdateStatus: "canceled" });
+    retrySocket.in(socket.roomId).socketsLeave(socket.roomId);
   });
 
   socket.on("disconnect", () => {

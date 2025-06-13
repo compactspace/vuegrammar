@@ -153,7 +153,7 @@ function rejectHire() {
   alert("고용 요청을 거절했습니다.");
 }
 
-const ComplteEmployStatus=userStore.unComplteEmploy.status;
+const ComplteEmployStatus=userStore.unComplteEmploy?.status;
 onMounted(() => {
  
   if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket===null){
@@ -165,6 +165,8 @@ return;
   if(ComplteEmployStatus!=undefined && ComplteEmployStatus==="in_progress"&&retrySocketStore.socket!=null){
     return;
   }
+
+  
   // 로컬스토리지에서 지역정보 복원
   const userDataStr = localStorage.getItem("user");
   if (userDataStr) {
