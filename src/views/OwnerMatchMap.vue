@@ -1,4 +1,13 @@
 <template>
+<!-- 은은한 모달 -->
+  <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <p id="modal-title" class="modal-text" style="white-space: pre-line;">
+        {{ statusMessage }}
+      </p>
+      <button class="modal-close-btn" @click="closeModal" aria-label="닫기">확인</button>
+    </div>
+  </div>
   <!-- 지도 + 현황 -->
   <div :class="['container', { column: isMobile }]">
     <!-- 지도 패널 -->
@@ -91,7 +100,8 @@ import { useMediaQuery } from '@vueuse/core'
 import { useUserStore } from "../stores/userStore.js"
 import { useRetrySocketStroe } from '../stores/useRetrySocketStroe.js'
 import { useLocationStore } from "../stores/useLocationStore.js"
-
+import { useRouter } from 'vue-router'
+const router=useRouter();
 const isMobile = useMediaQuery('(max-width: 768px)')
 const retrySocketStroe = useRetrySocketStroe()
 const userStore = useUserStore()
@@ -110,6 +120,10 @@ const chatMessages = ref([])
 const chatMessagesContainer = ref(null)
 const newMessage = ref('')
 const addressCache = new Map()
+
+const statusMessage = ref('')
+const showModal = ref(false)
+
 const sendMessage = () => {
 
 
@@ -247,6 +261,17 @@ const distanceStatusMessage = computed(() => {
   return '🕰️ 대기 중...'
 })
 
+// 모달 닫기 함수
+const closeModal=()=>{
+  showModal.value = false
+  statusMessage.value = ''
+
+userStore.setUnComplteEmploy({})
+retrySocketStroe.disconnectSocket();
+  router.push("/");
+
+}
+
 onMounted(async () => {
 
  const ComplteEmployStatus=userStore?.unComplteEmploy?.status;
@@ -290,6 +315,15 @@ onMounted(async () => {
   }
 
 
+
+
+// 소켓 이벤트 받아서 메시지 세팅 + 모달 오픈
+retrySocketStroe.socket.on("updateStatus", (data) => {
+  if (data.pdateStatus === 'canceled') {
+    statusMessage.value = `❗ 죄송합니다. 호출이 취소되었어요.\n기사님이 급한 사정으로 운행을 취소했어요.`
+    showModal.value = true
+  }
+})
 
 
 
@@ -634,4 +668,47 @@ onMounted(async () => {
   }
 }
 
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.25); /* 은은한 어둠 배경 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px); /* 흐림 효과로 은은하게 */
+}
+
+.modal-content {
+  background: #fffefc;
+  padding: 24px 32px;
+  border-radius: 14px;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-weight: 600;
+  color: #444;
+}
+
+.modal-text {
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.modal-close-btn {
+  background-color: #6c63ff; /* 부드러운 보라색 */
+  color: white;
+  font-weight: 700;
+  padding: 10px 28px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+
+.modal-close-btn:hover {
+  background-color: #574fd6;
+}
 </style>

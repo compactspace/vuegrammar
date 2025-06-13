@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { io } from "socket.io-client";
 
 const IP = import.meta.env.VITE_ALLOW_IP;
+
 export const useRetrySocketStroe = defineStore("retrySocket", {
   state: () => ({
     socket: null,

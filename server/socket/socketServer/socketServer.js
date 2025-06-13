@@ -29,7 +29,7 @@ const socketServer = https.createServer(options, app);
 
 //const socketServer = http.createServer(app);
 const IP = process.env.ALLOW_IP;
-// console.log(`IP: ${IP}`);
+console.log(`IP: ${IP}`);
 const allowedOrigins = [
   `https://${IP}:5173`,
   `https://localhost:5173`,
