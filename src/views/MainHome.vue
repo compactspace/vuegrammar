@@ -8,7 +8,7 @@
       <router-link to="/mussemSignUp" class="corner-fold">머슴 되기</router-link>
       <div class="banner-text">
         <h1>🏃‍♂️찾기</h1>
-        <MainBannerLocation />
+        <MainBannerLocation :gps-available="isPossibleGPS" />
       </div>
     </div>
 
@@ -44,6 +44,10 @@ const retrySocketStore=useRetrySocketStroe();
 const userStore = useUserStore()
 
 const unComplteEmployStatus = ref(null)
+
+
+const isPossibleGPS=ref(false);
+
 
 watchEffect(() => {
   const status = userStore.unComplteEmploy?.status
@@ -98,6 +102,12 @@ const retryJoinRoom = () => {
 
 
 onMounted(()=>{
+
+
+if(/Mobi|Android|iPhone/i.test(navigator.userAgent)){
+  isPossibleGPS.value=true;
+}
+
    const ComplteEmployStatus=userStore?.unComplteEmploy?.status;
  
    const   userData=userStore?.authUser
