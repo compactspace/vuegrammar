@@ -8,7 +8,7 @@
       <router-link to="/mussemSignUp" class="corner-fold">머슴 되기</router-link>
       <div class="banner-text">
         <h1>🏃‍♂️찾기</h1>
-        <MainBannerLocation />
+        <MainBannerLocation :gps-available="isPossibleGPS" />
       </div>
     </div>
 
@@ -36,7 +36,8 @@ import { useStoreMyLocation } from '../stores/useStoreMyLocation'
 import { useSocketStore } from '../stores/socketStore'
 import { useRetrySocketStroe } from '../stores/useRetrySocketStroe'
 import { useUserStore } from '../stores/userStore'
-
+import { useLoginApprovalSocketStore } from '../stores/useLoginApprovalSocket.js'; 
+  const loginApprovalStore = useLoginApprovalSocketStore();
 const router = useRouter();
 const store = useStoreMyLocation();
 const socketStore = useSocketStore();
@@ -44,6 +45,10 @@ const retrySocketStore=useRetrySocketStroe();
 const userStore = useUserStore()
 
 const unComplteEmployStatus = ref(null)
+
+
+const isPossibleGPS=ref(false);
+
 
 watchEffect(() => {
   const status = userStore.unComplteEmploy?.status
@@ -98,6 +103,25 @@ const retryJoinRoom = () => {
 
 
 onMounted(()=>{
+if(loginApprovalStore.socket==null &&userStore.authUser?.userDetail){
+
+  loginApprovalStore.connectSocket(userStore.authUser.userDetail.email)
+
+}
+  if(loginApprovalStore.socket!=null){
+
+loginApprovalStore.socket.on("requestLoginApproval", ({ message }) => {
+          const approved = confirm(message);
+          loginApprovalStore.socket.emit("loginApprovalResponse", approved);
+        });
+  }
+
+alert(loginApprovalStore.socket)
+
+if(/Mobi|Android|iPhone/i.test(navigator.userAgent)){
+  isPossibleGPS.value=true;
+}
+
    const ComplteEmployStatus=userStore?.unComplteEmploy?.status;
  
    const   userData=userStore?.authUser

@@ -6,9 +6,14 @@
       placeholder="현재 주소를 입력해주세요"
       class="location-input"
     />
-    <button @click="getCurrentLocation" title="현재 위치 가져오기">📍</button>
+    
+    <!-- 📍 모바일이면 위치 탐색 / 아니면 안내 -->
+    <button @click="handleLocationClick" title="현재 위치 가져오기">📍</button>
+    
+    <!-- 🔍 주소 검색 버튼 -->
     <button @click="openDaumPostcode" title="주소 검색">🔍</button>
 
+    <!-- 🪟 다음 주소 검색 모달 -->
     <transition name="modal-fade">
       <div v-if="showPostcode" class="modal-overlay" @click.self="closePostcode">
         <div class="modal-content">
@@ -23,8 +28,12 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import { useStoreMyLocation } from '../../stores/useStoreMyLocation.js'
-const store = useStoreMyLocation();
 
+const props = defineProps({
+  gpsAvailable: Boolean
+})
+
+const store = useStoreMyLocation()
 const location = ref('')
 const showPostcode = ref(false)
 const isDaumLoaded = ref(false)
@@ -59,9 +68,17 @@ onMounted(() => {
   document.body.appendChild(script)
 })
 
+const handleLocationClick = () => {
+  if (props.gpsAvailable) {
+    getCurrentLocation()
+  } else {
+    alert('📢 현재 위치 기능은 모바일에서만 사용 가능합니다.')
+  }
+}
+
 const getCurrentLocation = () => {
   if (!navigator.geolocation) {
-    alert('이 브라우저는 위치 정보를 지원하지 않습니다.')
+    alert('❌ 이 브라우저는 위치 정보를 지원하지 않습니다.')
     return
   }
   navigator.geolocation.getCurrentPosition(
@@ -78,7 +95,6 @@ const getCurrentLocation = () => {
 }
 
 async function reverseGeocode(lat, lng) {
-  console.log(`위도: ${lat}, 경도: ${lng}`)
   const kakaoApiKey = 'bf3a4b9e9374aa9b95f6e03305dd16eb' // ← 본인 키로 교체
   try {
     const res = await fetch(
@@ -121,7 +137,7 @@ async function getGeocodeFromAddress(address) {
     )
     const data = await res.json()
     if (data.documents.length > 0) {
-      const { x, y } = data.documents[0] // x: 경도, y: 위도
+      const { x, y } = data.documents[0]
       return { latitude: y, longitude: x }
     }
     return null
@@ -142,16 +158,6 @@ const openDaumPostcode = async () => {
 
   new window.daum.Postcode({
     async oncomplete(data) {
-      console.log(data)
-
-      const firstAdmin = data.query.trim().split(' ')[0]
-      const twoAdmin = data.query.trim().split(' ')[1]
-      const thirdAdmin = data.query.trim().split(' ')[2]
-      let areaAray = [firstAdmin, twoAdmin, thirdAdmin]
-      console.log(`1차: ${firstAdmin}  2차: ${twoAdmin}  3차: ${thirdAdmin}`)
-
-      store.setMyLocation(areaAray)
-
       const base = data.query.trim()
       const full = data.address.trim()
       const detail = full.replace(data.sido + ' ' + data.sigungu, '').trim()
@@ -160,10 +166,8 @@ const openDaumPostcode = async () => {
       location.value = finalAddress
       showPostcode.value = false
 
-      // 위도 경도 변환 추가
       const coords = await getGeocodeFromAddress(finalAddress)
       if (coords) {
-        console.log(`📌 위도: ${coords.latitude}, 경도: ${coords.longitude}`)
         store.setCoordinates({
           latitude: coords.latitude,
           longitude: coords.longitude
@@ -182,7 +186,6 @@ const closePostcode = () => {
   showPostcode.value = false
 }
 </script>
-
 
 <style scoped>
 .location-wrapper {
@@ -219,7 +222,6 @@ button:hover {
   background: #0056b3;
 }
 
-/* 모달 오버레이 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -234,7 +236,6 @@ button:hover {
   padding: 1rem;
 }
 
-/* 모달 내용 */
 .modal-content {
   position: relative;
   width: 420px;
@@ -248,7 +249,6 @@ button:hover {
   flex-direction: column;
 }
 
-/* 닫기 버튼 */
 .close-btn {
   position: absolute;
   top: 12px;
@@ -268,13 +268,11 @@ button:hover {
   color: #ef4444;
 }
 
-/* 다음 우편번호 영역 스타일 조정 */
 .postcode-container {
   flex-grow: 1;
   border: none;
 }
 
-/* 애니메이션 */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
   transition: opacity 0.3s ease;

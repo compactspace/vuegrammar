@@ -4,6 +4,9 @@ import { createRouter, createWebHistory } from "vue-router";
 import MussemMatchMap from "../views/MussemMatchMap.vue"; // 머슴용
 import OwnerMatchMap from "../views/OwnerMatchMap.vue"; // 주인용
 
+
+import MyOrder from "../views/MyOrder.vue";
+
 import MemberSignUpPage from "../views/MemberSignUpPage.vue";
 import LoginView from "../views/LoginView.vue";
 import NoPermission from "../views/NoPermission.vue";
@@ -44,6 +47,16 @@ const routes = [
     name: "mussemSignUpPage",
     meta: { noAuth: true },
     component: MussemSignUp,
+  },
+
+
+
+//MyOrder
+  {
+    path: "/order", // 기본 경로
+    name: "MyOrder",
+    meta: { requiresAuth: false, noAuth: true },
+    component: MyOrder,
   },
 
   {

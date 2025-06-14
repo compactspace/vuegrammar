@@ -1,5 +1,7 @@
 import userService from "../services/userService.js";
 import { authUser } from "../authUtil/authLogin/authLogin.js";
+import { redisPublisher } from "../config/redis.js";
+import { redisSubscriber } from "../config/redis.js";
 export const registerUser = async (req, res) => {
   try {
     const user = await userService.register(req.body);
@@ -37,21 +39,78 @@ export const mussemSignup = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
+  //const ip = req.ip + 1;
   const ip = req.ip;
-
   const { email, password } = req.body;
-  // console.log(`로그인 시도 IP: ${ip}, 이메일: ${email}`);
+
   try {
+    // 1. 사용자 인증
     const userInfo = await userService.login(email, password);
     if (!userInfo) return res.status(401).json({ message: "로그인 실패" });
 
     const idPk = userInfo.id;
-    const unComplteEmploy = await userService.getEmployInfo(
-      idPk,
-      userInfo.role
-    );
 
-    let resData = {
+    // 2. 기존 로그인 정보 조회 (IP 비교)
+    const existingLogin = await userService.getLoginStatusService(idPk);
+    console.log(`existingLogin: ${existingLogin?.ip}`);
+
+    // 여기 조건은 필요 시 실제 비교로 바꿔주세요
+    if (existingLogin && existingLogin.ip && existingLogin.ip !== ip) {
+      // 3. Redis에 로그인 승인 요청 발행
+      await redisPublisher.publish(
+        "loginApprovalRequest",
+        JSON.stringify({ userId: idPk, ip })
+      );
+
+      // 4. Redis에서 승인 응답 기다리기 (15초 타임아웃)
+      let approvalResult;
+      try {
+        approvalResult = await new Promise(async (resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error("기기 응답 시간 초과"));
+          }, 15000);
+
+          const handleMessage = async (message) => {
+            try {
+              const { userId, approved } = JSON.parse(message);
+              if (userId === idPk) {
+                clearTimeout(timeout);
+                await redisSubscriber.unsubscribe("loginApprovalResponse");
+                resolve(approved);
+              }
+            } catch (e) {
+              console.error("❌ 메시지 처리 오류:", e);
+            }
+          };
+
+          await redisSubscriber.subscribe(
+            "loginApprovalResponse",
+            handleMessage
+          );
+        });
+      } catch (err) {
+        if (!res.headersSent) {
+          return res
+            .status(408)
+            .json({ message: err.message || "응답 시간 초과" });
+        }
+        throw err;
+      }
+
+      // 5. 응답 결과 처리
+      if (approvalResult !== true) {
+        return res.status(403).json({ message: "로그인 거절됨" });
+      }
+
+      // 승인되면 IP 업데이트
+      await userService.loggedInService(idPk, ip);
+    } else {
+      // 기존 IP와 같거나 최초 로그인
+      await userService.loggedInService(idPk, ip);
+    }
+
+    // 6. 최종 로그인 성공 응답
+    res.json({
       loginSuccess: true,
       message: "로그인 성공",
       userDetail: {
@@ -59,41 +118,12 @@ export const loginUser = async (req, res) => {
         email: userInfo.email,
         role: userInfo.role,
       },
-    };
-    if (unComplteEmploy != undefined) {
-      resData.unComplteEmploy = unComplteEmploy;
-    }
-
-    if (userInfo.role === "mussem") {
-      const mussemActiveArea = await userService.getMussemActiveArea(email);
-      // console.log(mussemActiveArea.active_regions);
-      req.session.user = {
-        id: userInfo.id,
-        email: userInfo.email,
-        role: userInfo.role,
-        active_regions: mussemActiveArea.active_regions,
-      };
-
-      resData.userDetail.active_regions = mussemActiveArea.active_regions;
-      res.json(resData);
-    } else {
-      req.session.user = {
-        id: userInfo.id,
-        email: userInfo.email,
-        role: userInfo.role,
-      };
-
-      authUser.set({
-        email: userInfo.email,
-        role: userInfo.role,
-        ip: ip,
-      });
-
-      res.json(resData);
-    }
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "서버 오류" });
+    console.error("❌ 로그인 처리 중 오류:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "서버 오류" });
+    }
   }
 };
 
