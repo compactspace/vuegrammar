@@ -27,6 +27,9 @@ const credentialss = {
   cert: certificate,
   ca: ca,
 }
+import { redisSubscriber } from "../../config/redis.js";
+import { redisPublisher } from "../../config/redis.js";
+
 
 const app = express();
 //나중 let's encrypt 에서 인증서 발급받으면 https 를 적용하라.
@@ -54,6 +57,85 @@ export const createSocketServer = () => {
   console.log("✅ WebSocket 서버 5000 포트에서 실행 중");
   socketServer.listen(5000, function () {});
 };
+
+// 유저 ID와 socket ID 매핑용 Map
+const userSocketMap = new Map(); // userId → socket.id
+
+const loginApprovalNamespace = io.of("/loginApproval");
+loginApprovalNamespace.on("connection", (socket) => {
+  console.log("✅ [loginApproval] 네임스페이스 연결:", socket.id);
+
+  // 유저가 로그인 상태로 접속 시 실행
+  socket.on("register", ({ userId }) => {
+    userSocketMap.set(userId, socket.id);
+    socket.data.userId = userId;
+    console.log(
+      `📌 [loginApproval] 유저 ${userId} 등록됨 (socket: ${socket.id})`
+    );
+  });
+
+  socket.on("disconnect", () => {
+    const userId = socket.data?.userId;
+    if (userId) {
+      userSocketMap.delete(userId);
+      console.log(`❌ [loginApproval] 유저 ${userId} 소켓 연결 종료`);
+    }
+  });
+});
+
+// Redis 구독 - 로그인 승인 요청 처리
+async function subscribeLoginApproval() {
+  try {
+    // 구독 채널 설정 및 메시지 처리 (node-redis v5 방식)
+    await redisSubscriber.subscribe("loginApprovalRequest", async (message) => {
+      console.log("✅ Redis 메시지 수신:", message);
+
+      try {
+        const { userId, ip } = JSON.parse(message);
+        const socketId = userSocketMap.get(userId);
+        const loginNs = io.of("/loginApproval");
+
+        // 네임스페이스 전체에 브로드캐스트
+        loginNs.emit("requestLoginApproval", {
+          message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
+          userId,
+        });
+
+        if (socketId && loginNs.sockets.get(socketId)) {
+          const socket = loginNs.sockets.get(socketId);
+
+          // 해당 유저에게만 보냄
+          socket.emit("requestLoginApproval", {
+            message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
+            userId,
+          });
+
+          // 유저 응답 수신 후 결과 Redis로 발행
+          socket.once("loginApprovalResponse", (approved) => {
+            redisPublisher.publish(
+              "loginApprovalResponse",
+              JSON.stringify({ userId, approved })
+            );
+          });
+        } else {
+          // 유저가 없거나 연결 안 되어 있으면 자동 거절
+          redisPublisher.publish(
+            "loginApprovalResponse",
+            JSON.stringify({ userId, approved: false })
+          );
+        }
+      } catch (err) {
+        console.error("❌ 메시지 처리 중 에러:", err);
+      }
+    });
+
+    console.log("✅ Redis 채널 구독 완료: loginApprovalRequest");
+  } catch (err) {
+    console.error("❌ Redis 구독 실패:", err);
+  }
+}
+
+subscribeLoginApproval();
 
 //현재 접속중인 머슴 네임스페이스
 const locattion = io.of("/activeMussem");

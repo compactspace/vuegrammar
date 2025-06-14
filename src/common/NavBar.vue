@@ -18,7 +18,7 @@
 
       <template v-else>
         <router-link to="/" class="nav-link">🏠 홈</router-link>
-        <router-link to="/order" class="nav-link">📦 주문</router-link>
+        <router-link to="/order" class="nav-link">📦 나의 의뢰</router-link>
         <router-link to="/mypage" class="nav-link">👤 마이페이지</router-link>
         <button @click="sessionTest" class="nav-btn">🔐 세션테스트</button>
         <button @click="logout" class="nav-btn">🚪 로그아웃</button>
@@ -49,7 +49,7 @@
 
         <template v-else>
           <router-link to="/" class="nav-link" @click="menuOpen = false">🏠 홈</router-link>
-          <router-link to="/order" class="nav-link" @click="menuOpen = false">📦 주문</router-link>
+          <router-link to="/order" class="nav-link" @click="menuOpen = false">📦 나의 의뢰</router-link>
           <router-link to="/mypage" class="nav-link" @click="menuOpen = false">👤 마이페이지</router-link>
           <button @click="sessionTest" class="nav-btn">🔐 세션테스트</button>
           <button @click="handleLogoutClick" class="nav-btn">🚪 로그아웃</button>

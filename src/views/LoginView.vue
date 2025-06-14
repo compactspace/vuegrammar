@@ -30,6 +30,8 @@ import { useUserStore } from '../stores/userStore.js';
 import { useRouter } from 'vue-router';
 import { useSocketStore } from '../stores/socketStore.js';
 import { useRetrySocketStroe } from '../stores/useRetrySocketStroe.js';
+import { useLoginApprovalSocketStore } from '../stores/useLoginApprovalSocket.js'; 
+  const loginApprovalStore = useLoginApprovalSocketStore();
 const username = ref('');
 const password = ref('');
 const error = ref('');
@@ -47,32 +49,37 @@ const handleLogin = async () => {
       email: username.value,
       password: password.value,
     });
-
     const userData = response.data;
-
+    
     console.log(userData)
-
+    
     if (userData.loginSuccess) {
-
+      
       const unComplteEmploy=userData?.unComplteEmploy
       
       userStore.setUser(userData);
       const role = userData.userDetail?.role;
+     
       if(unComplteEmploy!=undefined || unComplteEmploy!=null){
        userStore.setUnComplteEmploy(unComplteEmploy);
    
       
        
+      
        retrySocketStroe.connectSocket({ userData, unComplteEmploy });
-      //    if(role==="mussem"){      
-      //     router.push('/mussemMain');
-      //     return;
-      // }
-      //  if(role==="customer"){      
-      //     router.push('/mussemMain');
-      //     return;
-      // }
-      }
+       //    if(role==="mussem"){      
+        //     router.push('/mussemMain');
+        //     return;
+        // }
+        //  if(role==="customer"){      
+          //     router.push('/mussemMain');
+          //     return;
+          // }
+        }
+    
+        
+loginApprovalStore.connectSocket(userData.userDetail.eamil);
+     
       if(role==="mussem"){      
           router.push('/mussemMain');
           return;

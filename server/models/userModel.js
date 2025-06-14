@@ -2,6 +2,7 @@ import pgPool from "../config/postgres.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { v4 as uuidv4 } from "uuid";
 import { findUser } from "../sql/users/login.js";
 import {
   createUser,
@@ -21,6 +22,8 @@ import {
 } from "../sql/users/login.js";
 
 import { getDefaultChatList } from "../sql/chat/chat.js";
+
+import { redisClient } from "../config/redis.js";
 
 // __dirname 대체 (ESM)
 const __filename = fileURLToPath(import.meta.url);
@@ -93,6 +96,27 @@ const loginInfoModel = async (email) => {
   return result.rows[0];
 };
 
+const getLoginStatusModel = async (idPk) => {
+  const data = await redisClient.hGetAll(`loggedIn:${idPk}`);
+  return Object.keys(data).length > 0 ? data : null;
+};
+
+const socketUserMap = new Map();
+const loggedInModel = async (idPk, ip) => {
+  const sessionId = uuidv4(); // UUID 생성 (또는 세션ID)
+  const socketId = socketUserMap[idPk] || null; // 등록된 socketId
+
+  await redisClient.hSet(`loggedIn:${idPk}`, {
+    ip,
+    sessionId,
+    loginTime: Date.now(),
+    socketId: socketId || "",
+  });
+
+  // optional: TTL 설정
+  await redisClient.expire(`loggedIn:${idPk}`, 60 * 60); // 1시간
+};
+
 const mussemActiveAreaModel = async (client, email) => {
   const result = await client.query(mussemActiveArea, [email]);
   return result.rows[0];
@@ -157,6 +181,8 @@ export default {
   checkEmailExistsModel,
   agreedTermModel,
   loginInfoModel,
+  getLoginStatusModel,
+  loggedInModel,
   mussemActiveAreaModel,
   getEmployInfoModel,
   getChatLogModel,

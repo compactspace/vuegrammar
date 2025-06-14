@@ -1,10 +1,17 @@
-// config/redis.js
 import { createClient } from "redis";
 
 const redisClient = createClient({
-  socket: {
-    port: 6379,
-  },
+  socket: { port: 6379 },
+  password: "1111",
+});
+
+const redisPublisher = createClient({
+  socket: { port: 6379 },
+  password: "1111",
+});
+
+const redisSubscriber = createClient({
+  socket: { port: 6379 },
   password: "1111",
 });
 
@@ -12,13 +19,17 @@ let isConnected = false;
 
 async function connectRedis() {
   if (!isConnected) {
-    redisClient.on("error", (err) => {
-      console.error("Redis Client Error", err);
+    [redisClient, redisPublisher, redisSubscriber].forEach((client) => {
+      client.on("error", (err) => console.error("Redis Client Error", err));
     });
-    await redisClient.connect();
+    await Promise.all([
+      redisClient.connect(),
+      redisPublisher.connect(),
+      redisSubscriber.connect(),
+    ]);
     isConnected = true;
-    console.log("✅ Redis connected");
+    console.log("✅ Redis clients connected");
   }
 }
 
-export { redisClient, connectRedis };
+export { redisClient, redisPublisher, redisSubscriber, connectRedis };

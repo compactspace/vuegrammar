@@ -101,6 +101,14 @@ const login = async (email, password) => {
   };
 };
 
+const getLoginStatusService = async (idPk) => {
+  return await userModel.getLoginStatusModel(idPk);
+};
+
+const loggedInService = async (idPk, ip) => {
+  return await userModel.loggedInModel(idPk, ip);
+};
+
 const getMussemActiveArea = async (email) => {
   const client = await pgPool.connect();
 
@@ -170,6 +178,8 @@ const getChatLogService = async (req, res) => {
 export default {
   register,
   login,
+  getLoginStatusService,
+  loggedInService,
   findByRegion,
   getTermListService,
   checkEmailExistsService,

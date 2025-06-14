@@ -36,7 +36,8 @@ import { useStoreMyLocation } from '../stores/useStoreMyLocation'
 import { useSocketStore } from '../stores/socketStore'
 import { useRetrySocketStroe } from '../stores/useRetrySocketStroe'
 import { useUserStore } from '../stores/userStore'
-
+import { useLoginApprovalSocketStore } from '../stores/useLoginApprovalSocket.js'; 
+  const loginApprovalStore = useLoginApprovalSocketStore();
 const router = useRouter();
 const store = useStoreMyLocation();
 const socketStore = useSocketStore();
@@ -102,6 +103,19 @@ const retryJoinRoom = () => {
 
 
 onMounted(()=>{
+if(loginApprovalStore.socket==null &&userStore.authUser?.userDetail){
+
+  loginApprovalStore.connectSocket(userStore.authUser.userDetail.email)
+
+}
+  if(loginApprovalStore.socket!=null){
+
+loginApprovalStore.socket.on("requestLoginApproval", ({ message }) => {
+          const approved = confirm(message);
+          loginApprovalStore.socket.emit("loginApprovalResponse", approved);
+        });
+  }
+
 
 
 if(/Mobi|Android|iPhone/i.test(navigator.userAgent)){
