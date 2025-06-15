@@ -14,41 +14,51 @@
     </div>
 
     <div class="order-list">
-      <template v-if="filteredOrders.length">
+      <!-- 진행중: 단일 카드 -->
+      <template v-if="activeTab === '진행중' && inProgressOrder">
+        <div
+          class="order-card special-in-progress"
+          @click="goToMatchRoom(inProgressOrder.id)"
+        >
+          <div class="order-header status-progress">
+            <h3 class="order-name">{{ inProgressOrder.name }}</h3>
+            <span class="order-status">진행중</span>
+          </div>
+          <p class="order-info">예상 도착: <em>{{ inProgressOrder.eta }}</em></p>
+        </div>
+      </template>
+
+      <!-- 완료 / 취소 -->
+      <template v-else-if="filteredOrders.length">
         <div
           v-for="order in filteredOrders"
           :key="order.id"
           class="order-card"
-          @mouseenter="hoveredOrder = order.id"
-          @mouseleave="hoveredOrder = null"
-          :style="hoveredOrder === order.id ? hoveredStyle : {}"
         >
           <div class="order-header" :class="statusColorClass(order.status)">
             <h3 class="order-name">{{ order.name }}</h3>
             <span class="order-status">{{ order.status }}</span>
           </div>
-          <p v-if="order.eta" class="order-info">예상 도착: <em>{{ order.eta }}</em></p>
           <p v-if="order.deliveredAt" class="order-info completed">완료일: <em>{{ order.deliveredAt }}</em></p>
           <p v-if="order.cancelledAt" class="order-info cancelled">취소일: <em>{{ order.cancelledAt }}</em></p>
         </div>
       </template>
 
+      <!-- 해당 상태에 데이터가 없을 때 -->
       <p v-else class="no-orders">해당 상태의 주문이 없습니다.</p>
     </div>
   </div>
 </template>
 
+
 <script setup>
-import { ref, computed,onMounted } from "vue"
-import axios from 'axios'
-import { useUserStore } from "../stores/userStore"
+import { ref, computed } from "vue"
+import { useRouter } from "vue-router"
 
-const userStore = useUserStore()
-
+const router = useRouter()
 
 const tabs = ["진행중", "완료", "취소"]
 const activeTab = ref("진행중")
-const hoveredOrder = ref(null)
 
 const orders = ref([
   { id: 1, name: "김치찌개", status: "진행중", eta: "10분 내 도착" },
@@ -56,15 +66,13 @@ const orders = ref([
   { id: 3, name: "비빔밥", status: "취소", cancelledAt: "2025-06-10" },
 ])
 
+const inProgressOrder = computed(() =>
+  orders.value.find((o) => o.status === "진행중")
+)
+
 const filteredOrders = computed(() =>
   orders.value.filter((o) => o.status === activeTab.value)
 )
-
-const hoveredStyle = {
-  boxShadow: "0 20px 30px rgba(100, 60, 160, 0.3), 0 10px 15px rgba(220, 50, 90, 0.2)",
-  transform: "translateY(-5px)",
-  transition: "all 0.3s ease",
-}
 
 const statusColorClass = (status) => {
   switch (status) {
@@ -79,47 +87,9 @@ const statusColorClass = (status) => {
   }
 }
 
-
-onMounted(async () => {
- const ComplteEmployStatus=userStore?.unComplteEmploy?.status;  
-  if(ComplteEmployStatus!=undefined){
-    console.log(ComplteEmployStatus)
-//  if(ComplteEmployStatus==="in_progress"&&retrySocketStroe.socket===null){
-
-//   const   userData=userStore?.authUser
-    
-//   const   unComplteEmploy=userStore?.unComplteEmploy
-//   let retryData={}
-//   retryData.userData=userData;
-//   retryData.unComplteEmploy=unComplteEmploy;
-
-//     retrySocketStroe.connectSocket(retryData);
-//     const   employer_id =userStore.authUser.userDetail.id
-//     console.log(`employer_id: ${employer_id}`)
-//     retrySocketStroe.socket.emit(`requestJoinRetryRoom`,(data)=>{
-//       const {retryJoinRoom}=data;
-
-
-
-// // 성공 응답 리스너 (한 번만 등록)
-//  if(retryJoinRoom==="success"){
-//   retrySocketStroe.socket.on("successRequest", (data) => {
-//   console.log('재연결 성공')
-//   });    
-         
-//       }else{
-//        // 실패 응답 리스너 (한 번만 등록)
-//   retrySocketStroe.socket.on("notFoundMussem", (data) => {
-   
-//    console.log(notFoundMussem || "머슴이 먹튀");
-//   });
-
-//       }
-//     })
-
-//   }
-  }
-})
+function goToMatchRoom(orderId) {
+  router.push(`/match-room/${orderId}`)
+}
 </script>
 
 <style scoped>
@@ -342,6 +312,29 @@ onMounted(async () => {
 
   .order-info {
     font-size: 1rem;
+  }
+}
+
+/* 추가: 씹간지 진행중 스타일 */
+.special-in-progress {
+  background: linear-gradient(135deg, #fef6ff, #e0d4ff);
+  border: 2px solid #b999f2;
+  box-shadow: 0 0 25px rgba(90, 42, 131, 0.4);
+  animation: pulse 1.4s ease-in-out infinite;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.special-in-progress:hover {
+  transform: scale(1.02);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(150, 110, 240, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(150, 110, 240, 0.6);
   }
 }
 </style>
