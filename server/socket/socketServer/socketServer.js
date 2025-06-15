@@ -89,7 +89,7 @@ async function subscribeLoginApproval() {
     // 구독 채널 설정 및 메시지 처리 (node-redis v5 방식)
     await redisSubscriber.subscribe("loginApprovalRequest", async (message) => {
       console.log("✅ Redis 메시지 수신:", message);
-
+      console.log(userSocketMap)
       try {
         const { userId, ip } = JSON.parse(message);
         const socketId = userSocketMap.get(userId);
@@ -98,10 +98,10 @@ async function subscribeLoginApproval() {
         const loginNs = io.of("/loginApproval");
 
         // 네임스페이스 전체에 브로드캐스트 => 추후 써먹을 내용이 있을듯 전체 브로드 캐스트은 잠시 주석처리
-        loginNs.emit("requestLoginApproval", {
-          message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
-          userId,
-        });
+        // loginNs.emit("requestLoginApproval", {
+        //   message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
+        //   userId,
+        // });
 
         if (socketId && loginNs.sockets.get(socketId)) {
           const socket = loginNs.sockets.get(socketId);

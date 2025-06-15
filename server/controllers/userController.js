@@ -39,9 +39,9 @@ export const mussemSignup = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-  const r = Math.random();
-  const ip = req.ip + r;
-  //const ip = req.ip;
+  // const r = Math.random();
+  // const ip = req.ip + r;
+  const ip = req.ip;
   const { email, password } = req.body;
 
   try {
