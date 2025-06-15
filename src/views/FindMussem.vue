@@ -269,7 +269,7 @@ watch(selectedLevel, () => {
 });
 
 const  hireMussem=(mussem)=>{
-  //alert(`머슴 #${mussem.id} (${mussem.email})을(를) 고용 요청했습니다!`);
+
   // 실제 고용 처리 로직은 여기에 작성
  
  const toMussemEmail= mussem.email
