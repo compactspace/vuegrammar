@@ -114,8 +114,13 @@ export const loginUser = async (req, res) => {
       await userService.loggedInService(idPk, ip);
     }
 
-    // 6. 최종 로그인 성공 응답
-    res.json({
+    //getEmployInfo
+    const unComplteEmploy = await userService.getEmployInfo(
+      idPk,
+      userInfo.role
+    );
+
+    let resData = {
       loginSuccess: true,
       message: "로그인 성공",
       userDetail: {
@@ -123,7 +128,41 @@ export const loginUser = async (req, res) => {
         email: userInfo.email,
         role: userInfo.role,
       },
-    });
+    };
+    if (unComplteEmploy != undefined) {
+      resData.unComplteEmploy = unComplteEmploy;
+    }
+
+    // 6. 최종 로그인 성공 응답
+    if (userInfo.role === "mussem") {
+      const mussemActiveArea = await userService.getMussemActiveArea(email);
+      // console.log(mussemActiveArea.active_regions);
+      req.session.user = {
+        id: userInfo.id,
+        email: userInfo.email,
+        role: userInfo.role,
+        active_regions: mussemActiveArea.active_regions,
+      };
+
+      resData.userDetail.active_regions = mussemActiveArea.active_regions;
+
+      console.log("????????????머슴머슴머슴머슴머슴??????????");
+      console.log(userInfo);
+      console.log("??????????????????????");
+
+      res.json(resData);
+    } else {
+      req.session.user = {
+        id: userInfo.id,
+        email: userInfo.email,
+        role: userInfo.role,
+      };
+
+      console.log("??????????????????????");
+      console.log(resData);
+      console.log("??????????????????????");
+      res.json(resData);
+    }
   } catch (err) {
     console.error("❌ 로그인 처리 중 오류:", err);
     if (!res.headersSent) {
@@ -161,7 +200,7 @@ export const authcheck = async (req, res) => {
   const { username } = req.session.user;
   if (username) {
     // 로그인된 상태
-    console.log(`username:  ${username}`);
+
     await res.json({ loggedIn: true, userInfo: req.session });
   } else {
     // 로그인되지 않은 상태

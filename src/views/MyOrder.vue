@@ -42,16 +42,18 @@
 import { ref, computed,onMounted } from "vue"
 import axios from 'axios'
 import { useUserStore } from "../stores/userStore"
-import { useRetrySocketStroe } from "../stores/useRetrySocketStroe"
+
 const userStore = useUserStore()
-const retrySocketStroe = useRetrySocketStroe()
+
 
 const tabs = ["진행중", "완료", "취소"]
 const activeTab = ref("진행중")
 const hoveredOrder = ref(null)
 
 const orders = ref([
- 
+  { id: 1, name: "김치찌개", status: "진행중", eta: "10분 내 도착" },
+  { id: 2, name: "된장찌개", status: "완료", deliveredAt: "2025-06-12" },
+  { id: 3, name: "비빔밥", status: "취소", cancelledAt: "2025-06-10" },
 ])
 
 const filteredOrders = computed(() =>
@@ -79,54 +81,45 @@ const statusColorClass = (status) => {
 
 
 onMounted(async () => {
-
- const ComplteEmployStatus=userStore?.unComplteEmploy?.status;
-  
+ const ComplteEmployStatus=userStore?.unComplteEmploy?.status;  
   if(ComplteEmployStatus!=undefined){
+    console.log(ComplteEmployStatus)
+//  if(ComplteEmployStatus==="in_progress"&&retrySocketStroe.socket===null){
+
+//   const   userData=userStore?.authUser
+    
+//   const   unComplteEmploy=userStore?.unComplteEmploy
+//   let retryData={}
+//   retryData.userData=userData;
+//   retryData.unComplteEmploy=unComplteEmploy;
+
+//     retrySocketStroe.connectSocket(retryData);
+//     const   employer_id =userStore.authUser.userDetail.id
+//     console.log(`employer_id: ${employer_id}`)
+//     retrySocketStroe.socket.emit(`requestJoinRetryRoom`,(data)=>{
+//       const {retryJoinRoom}=data;
 
 
- if(ComplteEmployStatus==="in_progress"&&retrySocketStroe.socket===null){
 
-   const   userData=userStore?.authUser
-    console.log(userData)
-  const   unComplteEmploy=userStore?.unComplteEmploy
-  let retryData={}
-  retryData.userData=userData;
-  retryData.unComplteEmploy=unComplteEmploy;
-
-    retrySocketStroe.connectSocket(retryData);
-    const   employer_id =userStore.authUser.userDetail.id
-    console.log(`employer_id: ${employer_id}`)
-    retrySocketStroe.socket.emit(`requestJoinRetryRoom`,(data)=>{
-      const {retryJoinRoom}=data;
-
-
-
-// 성공 응답 리스너 (한 번만 등록)
- if(retryJoinRoom==="success"){
-  retrySocketStroe.socket.on("successRequest", (data) => {
-  console.log('재연결 성공')
-  });    
+// // 성공 응답 리스너 (한 번만 등록)
+//  if(retryJoinRoom==="success"){
+//   retrySocketStroe.socket.on("successRequest", (data) => {
+//   console.log('재연결 성공')
+//   });    
          
-      }else{
-       // 실패 응답 리스너 (한 번만 등록)
-  retrySocketStroe.socket.on("notFoundMussem", (data) => {
+//       }else{
+//        // 실패 응답 리스너 (한 번만 등록)
+//   retrySocketStroe.socket.on("notFoundMussem", (data) => {
    
-   console.log(notFoundMussem || "머슴이 먹튀");
-  });
+//    console.log(notFoundMussem || "머슴이 먹튀");
+//   });
 
-      }
-    })
+//       }
+//     })
 
+//   }
   }
-
-
-  }
-
-
-
 })
-
 </script>
 
 <style scoped>

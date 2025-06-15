@@ -64,6 +64,8 @@ const showFindMussemButton = computed(() => {
 })
 
 const handleCheckLocation = (path) => {
+
+
   if (!store.myLocation) {
     alert('주소를 먼저 입력해야 합니다.')
     return

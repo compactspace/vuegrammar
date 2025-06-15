@@ -69,6 +69,7 @@ onMounted(() => {
 })
 
 const handleLocationClick = () => {
+  
   if (props.gpsAvailable) {
     getCurrentLocation()
   } else {
@@ -109,10 +110,24 @@ async function reverseGeocode(lat, lng) {
     const data = await res.json()
     if (data.documents && data.documents.length > 0) {
       const address = data.documents[0].address
-      const { address_name, region_1depth_name } = address
-      const fullProvince = FULL_PROVINCE_NAMES[region_1depth_name] || region_1depth_name
-      const updatedAddress = address_name.replace(region_1depth_name, fullProvince)
-      store.setMyLocation(fullProvince)
+      const { address_name, region_1depth_name ,region_2depth_name,region_3depth_name} = address
+      //역지 오시 카카오는 또 씨발 경기도를 경기, 서울특별시를  서울 로 주네 씨발
+      // 따라서 우선 적절히 미리 만들어둔 객체 키 경기:경기도 꼴을 이용한다.FULL_PROVINCE_NAMES
+      const firstAdmin = FULL_PROVINCE_NAMES[region_1depth_name] || region_1depth_name
+      const twoAdmin=region_2depth_name;
+      const thirdAdmin=region_3depth_name
+
+      const updatedAddress = address_name.replace(region_1depth_name, firstAdmin)
+      console.log(`1차: ${firstAdmin}  2차: ${twoAdmin}  3차: ${thirdAdmin}`)
+
+
+  
+      let areaAray = [firstAdmin, twoAdmin, thirdAdmin]
+
+      store.setMyLocation(areaAray)
+
+     console.log(updatedAddress)
+      
       store.setCoordinates({ latitude: lat, longitude: lng })
       return updatedAddress
     }
@@ -155,9 +170,19 @@ const openDaumPostcode = async () => {
 
   showPostcode.value = true
   await nextTick()
-
+alert("finalAddress")
   new window.daum.Postcode({
     async oncomplete(data) {
+  
+
+      const firstAdmin = data.query.trim().split(' ')[0]
+      const twoAdmin = data.query.trim().split(' ')[1]
+      const thirdAdmin = data.query.trim().split(' ')[2]
+      let areaAray = [firstAdmin, twoAdmin, thirdAdmin]
+      console.log(`1차: ${firstAdmin}  2차: ${twoAdmin}  3차: ${thirdAdmin}`)
+
+      store.setMyLocation(areaAray)
+
       const base = data.query.trim()
       const full = data.address.trim()
       const detail = full.replace(data.sido + ' ' + data.sigungu, '').trim()
@@ -166,8 +191,10 @@ const openDaumPostcode = async () => {
       location.value = finalAddress
       showPostcode.value = false
 
+      // 위도 경도 변환 추가
       const coords = await getGeocodeFromAddress(finalAddress)
       if (coords) {
+        console.log(`📌 위도: ${coords.latitude}, 경도: ${coords.longitude}`)
         store.setCoordinates({
           latitude: coords.latitude,
           longitude: coords.longitude
