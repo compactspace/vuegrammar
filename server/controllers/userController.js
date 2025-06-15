@@ -39,8 +39,9 @@ export const mussemSignup = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-  //const ip = req.ip + 1;
-  const ip = req.ip;
+  const r = Math.random();
+  const ip = req.ip + r;
+  //const ip = req.ip;
   const { email, password } = req.body;
 
   try {
@@ -52,9 +53,11 @@ export const loginUser = async (req, res) => {
 
     // 2. 기존 로그인 정보 조회 (IP 비교)
     const existingLogin = await userService.getLoginStatusService(idPk);
-    console.log(`existingLogin: ${existingLogin?.ip}`);
 
-    // 여기 조건은 필요 시 실제 비교로 바꿔주세요
+    console.log(
+      `기 로그인 아이피: ${existingLogin?.ip}  요청자의 다른 아이피: ${ip}`
+    );
+
     if (existingLogin && existingLogin.ip && existingLogin.ip !== ip) {
       // 3. Redis에 로그인 승인 요청 발행
       await redisPublisher.publish(
@@ -71,6 +74,7 @@ export const loginUser = async (req, res) => {
           }, 15000);
 
           const handleMessage = async (message) => {
+            console.log("좋아요 구독 알림설정 띠링 띠링");
             try {
               const { userId, approved } = JSON.parse(message);
               if (userId === idPk) {
@@ -106,6 +110,7 @@ export const loginUser = async (req, res) => {
       await userService.loggedInService(idPk, ip);
     } else {
       // 기존 IP와 같거나 최초 로그인
+
       await userService.loggedInService(idPk, ip);
     }
 
@@ -127,8 +132,16 @@ export const loginUser = async (req, res) => {
   }
 };
 
-export const logout = (req, res) => {
-  console.log("로그 아웃 유저 세션 ID:", req.sessionID);
+export const logout = async (req, res) => {
+  const { idPk, email } = req.body;
+
+  await userService.logoutlogService(idPk);
+
+  await redisPublisher.publish(
+    "subscribeLogoutLogRequest",
+    JSON.stringify({ userId: idPk, email })
+  );
+
   // console.log("쿠키 상태:", req.cookies);
   // 세션 종료 후 connect.sid 쿠키 삭제
   res.clearCookie("connect.sid", {

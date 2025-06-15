@@ -117,6 +117,10 @@ const loggedInModel = async (idPk, ip) => {
   await redisClient.expire(`loggedIn:${idPk}`, 60 * 60); // 1시간
 };
 
+const logoutlogModel = async (idPk) => {
+  await redisClient.del(`loggedIn:${idPk}`);
+};
+
 const mussemActiveAreaModel = async (client, email) => {
   const result = await client.query(mussemActiveArea, [email]);
   return result.rows[0];
@@ -183,6 +187,7 @@ export default {
   loginInfoModel,
   getLoginStatusModel,
   loggedInModel,
+  logoutlogModel,
   mussemActiveAreaModel,
   getEmployInfoModel,
   getChatLogModel,

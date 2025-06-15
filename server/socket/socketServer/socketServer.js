@@ -93,9 +93,11 @@ async function subscribeLoginApproval() {
       try {
         const { userId, ip } = JSON.parse(message);
         const socketId = userSocketMap.get(userId);
+
+        // 주의: 네임스페이스 생성시 이렇게 변수에 담아 또 가져올 수 있음
         const loginNs = io.of("/loginApproval");
 
-        // 네임스페이스 전체에 브로드캐스트
+        // 네임스페이스 전체에 브로드캐스트 => 추후 써먹을 내용이 있을듯 전체 브로드 캐스트은 잠시 주석처리
         loginNs.emit("requestLoginApproval", {
           message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
           userId,
@@ -136,6 +138,26 @@ async function subscribeLoginApproval() {
 }
 
 subscribeLoginApproval();
+
+async function subscribeLogoutLog() {
+  try {
+    // 구독 채널 설정 및 메시지 처리 (node-redis v5 방식)
+    await redisSubscriber.subscribe(
+      "subscribeLogoutLogRequest",
+      async (message) => {
+        console.log("✅ Redis 로그아웃 메시지 수신:", message);
+
+        const parsed = JSON.parse(message);
+        const { userId } = parsed;
+        userSocketMap.delete(userId);
+      }
+    );
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+subscribeLogoutLog();
 
 //현재 접속중인 머슴 네임스페이스
 const locattion = io.of("/activeMussem");

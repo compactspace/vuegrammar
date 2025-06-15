@@ -67,7 +67,7 @@ import { useUserStore } from "../stores/userStore.js"
 import { useSocketStore } from "../stores/socketStore.js"
 import { onMounted } from "vue"
 import { useRetrySocketStroe } from "../stores/useRetrySocketStroe.js"
-
+import { useLoginApprovalSocketStore } from "../stores/useLoginApprovalSocket.js"
 
 // store의 상태를 반응형 ref로 추출
 import { watch } from "vue"
@@ -75,6 +75,9 @@ import axios from "axios"
 
 const userStore = useUserStore()
 const retrySocketStroe=useRetrySocketStroe();
+const loginApprovalSocketStore=useLoginApprovalSocketStore();
+
+
 const router = useRouter()
 const isMobile = useMediaQuery("(max-width: 767px)")
 const menuOpen = ref(false)
@@ -93,9 +96,16 @@ const sessionTest = () => {
 
 const logout = async () => {
 
+
   try {
     // 여기서 axios 로그아웃 요청 넣어도 좋음   
-     await axios.post(`users/logout`).then((res)=>{
+    
+    const idPk=userStore.authUser.userDetail.id;
+
+
+ const email=userStore.authUser.userDetail.email;
+ 
+     await axios.post(`users/logout`,{idPk:idPk,email:email}).then((res)=>{
 
       csonole.log(res)
      }).catch((err)=>{console.log(err)})

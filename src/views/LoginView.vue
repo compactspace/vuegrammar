@@ -76,9 +76,9 @@ const handleLogin = async () => {
           //     return;
           // }
         }
-    
+
         
-loginApprovalStore.connectSocket(userData.userDetail.eamil);
+loginApprovalStore.connectSocket(userData.userDetail.id);
      
       if(role==="mussem"){      
           router.push('/mussemMain');

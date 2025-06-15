@@ -2,7 +2,7 @@
 import { defineStore } from "pinia";
 import { io } from "socket.io-client";
 
-const IP = import.meta.env.VITE_ALLOW_IP;
+let IP = import.meta.env.VITE_ALLOW_IP;
 
 export const useLoginApprovalSocketStore = defineStore("loginApprovalSocket", {
   state: () => ({
@@ -11,13 +11,23 @@ export const useLoginApprovalSocketStore = defineStore("loginApprovalSocket", {
 
   actions: {
     connectSocket(userId) {
+      // 로컬 호스트로 키는 경우의 테스트 때문에...
+
+      if (location.href.includes("localhost")) {
+        IP = "localhost";
+      }
+
       if (!this.socket) {
         this.socket = io(`https://mussem.kro.kr:5000/loginApproval`, {
           withCredentials: true,
         });
 
         this.socket.on("connect", () => {
-          console.log("Socket connected:", this.socket.id);
+          // console.log(
+          //   "Socket connected:",
+          //   this.socket.id,
+          //   `userData.userDetail.eamil: ${userId}`
+          // );
           this.socket.emit("register", { userId });
         });
 

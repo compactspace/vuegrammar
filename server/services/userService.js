@@ -106,7 +106,11 @@ const getLoginStatusService = async (idPk) => {
 };
 
 const loggedInService = async (idPk, ip) => {
-  return await userModel.loggedInModel(idPk, ip);
+  await userModel.loggedInModel(idPk, ip);
+};
+
+const logoutlogService = async (idPk) => {
+  return await userModel.logoutlogModel(idPk);
 };
 
 const getMussemActiveArea = async (email) => {
@@ -180,6 +184,7 @@ export default {
   login,
   getLoginStatusService,
   loggedInService,
+  logoutlogService,
   findByRegion,
   getTermListService,
   checkEmailExistsService,

@@ -85,10 +85,10 @@ const retryJoinRoom = () => {
 
   // 성공 응답 리스너 (한 번만 등록)
   retrySocketStore.socket.on("successRequest", (data) => {
-    console.log(data)
+ 
     const { retryJoinRoom } = data;
     if (retryJoinRoom === "success") {
-      alert("하하하");
+     
        router.push("/matchCustomer")
       
     }
@@ -103,6 +103,9 @@ const retryJoinRoom = () => {
 
 
 onMounted(()=>{
+
+
+  
 if(loginApprovalStore.socket==null &&userStore.authUser?.userDetail){
 
   loginApprovalStore.connectSocket(userStore.authUser.userDetail.email)
@@ -112,10 +115,17 @@ if(loginApprovalStore.socket==null &&userStore.authUser?.userDetail){
 
 loginApprovalStore.socket.on("requestLoginApproval", ({ message }) => {
           const approved = confirm(message);
-          loginApprovalStore.socket.emit("loginApprovalResponse", approved);
+
+    if (approved) {
+  // 확인 눌렀을 때 실행할 코드
+   loginApprovalStore.socket.emit("loginApprovalResponse", approved);
+} else {
+  loginApprovalStore.socket.emit("loginApprovalResponse", approved);
+}
+
+         
         });
   }
-
 
 
 if(/Mobi|Android|iPhone/i.test(navigator.userAgent)){
