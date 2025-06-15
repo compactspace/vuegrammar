@@ -85,13 +85,11 @@ const agreedTermModel = async (client, { agreedTermIds, registeredId }) => {
 };
 
 const findUserByUsername = async (username) => {
-  console.log(`username: ${username}`);
   const result = await pgPool.query(findUser, [username]);
   return result.rows[0];
 };
 
 const loginInfoModel = async (email) => {
-  console.log(`username: ${email}`);
   const result = await pgPool.query(loginInfo, [email]);
   return result.rows[0];
 };
