@@ -52,7 +52,8 @@ export const loginUser = async (req, res) => {
     const idPk = userInfo.id;
 
     // 2. 기존 로그인 정보 조회 (IP 비교)
-    const existingLogin = await userService.getLoginStatusService(idPk);
+    const findKey = ip + idPk;
+    const existingLogin = await userService.getLoginStatusService(findKey);
 
     console.log(
       `기 로그인 아이피: ${existingLogin?.ip}  요청자의 다른 아이피: ${ip}`
@@ -107,11 +108,11 @@ export const loginUser = async (req, res) => {
       }
 
       // 승인되면 IP 업데이트
-      await userService.loggedInService(idPk, ip);
+      await userService.loggedInService(idPk, ip, findKey);
     } else {
       // 기존 IP와 같거나 최초 로그인
 
-      await userService.loggedInService(idPk, ip);
+      await userService.loggedInService(idPk, ip, findKey);
     }
 
     //getEmployInfo
@@ -173,8 +174,11 @@ export const loginUser = async (req, res) => {
 
 export const logout = async (req, res) => {
   const { idPk, email } = req.body;
+  const ip = req.ip;
+  // 2. 기존 로그인 정보 조회 (IP 비교)
+  const findKey = ip + idPk;
 
-  await userService.logoutlogService(idPk);
+  await userService.logoutlogService(findKey);
 
   await redisPublisher.publish(
     "subscribeLogoutLogRequest",

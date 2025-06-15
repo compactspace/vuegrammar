@@ -105,8 +105,8 @@ const getLoginStatusService = async (idPk) => {
   return await userModel.getLoginStatusModel(idPk);
 };
 
-const loggedInService = async (idPk, ip) => {
-  await userModel.loggedInModel(idPk, ip);
+const loggedInService = async (idPk, ip, findKey) => {
+  await userModel.loggedInModel(idPk, ip, findKey);
 };
 
 const logoutlogService = async (idPk) => {
