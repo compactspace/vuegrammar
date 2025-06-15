@@ -421,7 +421,7 @@ onMounted(async () => {
   }
 
   retrySocketStroe.socket.on("chatMessage", (msg) => {
-    alert(msg)
+    
     chatMessages.value.push(msg);
   });
 });

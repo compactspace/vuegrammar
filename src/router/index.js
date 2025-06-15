@@ -73,13 +73,13 @@ const routes = [
     component: MussemMainHome,
   },
   {
-    path: "/mastMussem", // 머슴 페이지 경로
+    path: "/mastMussem", 
     name: "MastView",
     component: MussemMatchMap,
     meta: { requiresAuth: false, noAuth: true, role: "mussem" },
   },
   {
-    path: "/matchCustomer", // 주인 페이지 경로
+    path: "/matchCustomer", 
     name: "match",
 
     component: OwnerMatchMap,
