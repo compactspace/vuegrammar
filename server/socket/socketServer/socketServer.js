@@ -17,6 +17,8 @@ import { registerCustomerEvents } from "../eventHandler/registerCustomerEvents.j
 import path from "path";
 import { insertMatchingModel } from "../model/employmentModel.js";
 import { retrySocketRegisterEvent } from "../registerSocketEvent/retrySocketRegisterEvent.js";
+import { redisSubscriber } from "../../config/redis.js";
+import { redisPublisher } from "../../config/redis.js";
 
 const certPath = 'C:/certs';const privateKey = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-key.pem'), 'utf8');
 const certificate = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-crt.pem'), 'utf8');
@@ -27,8 +29,6 @@ const credentialss = {
   cert: certificate,
   ca: ca,
 }
-import { redisSubscriber } from "../../config/redis.js";
-import { redisPublisher } from "../../config/redis.js";
 
 
 const app = express();

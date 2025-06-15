@@ -12,7 +12,7 @@ export const useLoginApprovalSocketStore = defineStore("loginApprovalSocket", {
   actions: {
     connectSocket(userId) {
       if (!this.socket) {
-        this.socket = io(`https://${IP}:5000/loginApproval`, {
+        this.socket = io(`https://mussem.kro.kr:5000/loginApproval`, {
           withCredentials: true,
         });
 
