@@ -52,6 +52,7 @@ export const loginUser = async (req, res) => {
     const idPk = userInfo.id;
 
     // 2. 기존 로그인 정보 조회 (IP 비교)
+    const findKey = ip + idPk;
     const existingLogin = await userService.getLoginStatusService(idPk);
 
     console.log(
@@ -77,6 +78,9 @@ export const loginUser = async (req, res) => {
             console.log("좋아요 구독 알림설정 띠링 띠링");
             try {
               const { userId, approved } = JSON.parse(message);
+                
+console.log(`userId:${userId}, approved:${approved}`)
+
               if (userId === idPk) {
                 clearTimeout(timeout);
                 await redisSubscriber.unsubscribe("loginApprovalResponse");
@@ -102,16 +106,20 @@ export const loginUser = async (req, res) => {
       }
 
       // 5. 응답 결과 처리
+      console.log(`응답결과 처리: ${approvalResult}`)
       if (approvalResult !== true) {
         return res.status(403).json({ message: "로그인 거절됨" });
       }
 
       // 승인되면 IP 업데이트
-      await userService.loggedInService(idPk, ip);
+      console.log("cccccccccccccccccccccccccccccccccccccccccc")
+      await userService.loggedInService(idPk, ip, findKey);
+       console.log("cccccccccccccccccccccccccccccccccccccccccc")
+        console.log("cccccccccccccccccccccccccccccccccccccccccc")
     } else {
       // 기존 IP와 같거나 최초 로그인
 
-      await userService.loggedInService(idPk, ip);
+      await userService.loggedInService(idPk, ip, findKey);
     }
 
     //getEmployInfo
@@ -173,8 +181,11 @@ export const loginUser = async (req, res) => {
 
 export const logout = async (req, res) => {
   const { idPk, email } = req.body;
+  const ip = req.ip;
+  // 2. 기존 로그인 정보 조회 (IP 비교)
+  const findKey = idPk;
 
-  await userService.logoutlogService(idPk);
+  await userService.logoutlogService(findKey);
 
   await redisPublisher.publish(
     "subscribeLogoutLogRequest",

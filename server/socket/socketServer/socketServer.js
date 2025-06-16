@@ -70,8 +70,9 @@ loginApprovalNamespace.on("connection", (socket) => {
     userSocketMap.set(userId, socket.id);
     socket.data.userId = userId;
     console.log(
-      `📌 [loginApproval] 유저 ${userId} 등록됨 (socket: ${socket.id})`
+      `📌 [loginApproval] 유저 ${userId} 등록됨 (socket: ${socket.id} 현재 등록된 중복로그인자: ${JSON.stringify(Array.from(userSocketMap.entries()))})`
     );
+    
   });
 
   socket.on("disconnect", () => {
@@ -89,14 +90,15 @@ async function subscribeLoginApproval() {
     // 구독 채널 설정 및 메시지 처리 (node-redis v5 방식)
     await redisSubscriber.subscribe("loginApprovalRequest", async (message) => {
       console.log("✅ Redis 메시지 수신:", message);
-      console.log(userSocketMap)
+      console.log(`현재 기로그인자: ${JSON.stringify(Array.from(userSocketMap.entries()))}`)
       try {
         const { userId, ip } = JSON.parse(message);
         const socketId = userSocketMap.get(userId);
-
+        console.log(`socketId: ${socketId}`)
         // 주의: 네임스페이스 생성시 이렇게 변수에 담아 또 가져올 수 있음
         const loginNs = io.of("/loginApproval");
 
+        console.log(loginNs.sockets.get(socketId).socketId)
         // 네임스페이스 전체에 브로드캐스트 => 추후 써먹을 내용이 있을듯 전체 브로드 캐스트은 잠시 주석처리
         // loginNs.emit("requestLoginApproval", {
         //   message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
@@ -108,7 +110,7 @@ async function subscribeLoginApproval() {
 
           // 해당 유저에게만 보냄
           socket.emit("requestLoginApproval", {
-            message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
+            message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 현재 기기를 강제로그 아웃하고  허용하시겠습니까?`,
             userId,
           });
 
@@ -121,6 +123,7 @@ async function subscribeLoginApproval() {
           });
         } else {
           // 유저가 없거나 연결 안 되어 있으면 자동 거절
+          console.log("왓더퍽")
           redisPublisher.publish(
             "loginApprovalResponse",
             JSON.stringify({ userId, approved: false })
@@ -146,10 +149,15 @@ async function subscribeLogoutLog() {
       "subscribeLogoutLogRequest",
       async (message) => {
         console.log("✅ Redis 로그아웃 메시지 수신:", message);
-
+ console.log(
+      `📌  현재 등록된 중복로그인자: ${JSON.stringify(Array.from(userSocketMap.entries()))})`
+    );
         const parsed = JSON.parse(message);
         const { userId } = parsed;
         userSocketMap.delete(userId);
+         console.log(
+      `📌  현재 등록된 중복로그인자 제거후 : ${JSON.stringify(Array.from(userSocketMap.entries()))})`
+    );
       }
     );
   } catch (err) {
