@@ -29,22 +29,15 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-const certPath = 'C:/certs';
-const privateKey = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-key.pem'), 'utf8');
-const certificate = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-crt.pem'), 'utf8');
-const ca = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-chain.pem'), 'utf8');
-
-const credentialss = {
-  key: privateKey,
-  cert: certificate,
-  ca: ca,
+const options = {
+  key: fs.readFileSync("C:/Windows/System32/localhost-key.pem"),
+  cert: fs.readFileSync("C:/Windows/System32/localhost.pem"),
 };
 
 async function startServer() {
   const IP = process.env.ALLOW_IP;
 
   const allowedOrigins = [
-    
     `https://${IP}:5173`,
     `https://localhost:5173`,
     `http://${IP}:5173`,
@@ -61,10 +54,9 @@ async function startServer() {
       })
     );
     const __dirname = path.resolve();
-const clientBuildPath = path.join(__dirname, 'dist'); // 또는 'public', 실제 빌드 결과물 위치
+    const clientBuildPath = path.join(__dirname, "dist"); // 또는 'public', 실제 빌드 결과물 위치
 
-app.use(express.static(clientBuildPath));
-
+    app.use(express.static(clientBuildPath));
 
     app.use(cookieParser());
     app.use(session(sessionConfig));
@@ -74,12 +66,12 @@ app.use(express.static(clientBuildPath));
     app.use("/users", userRoutes);
     app.use("/customer", customerRouter);
     app.use("/mussem", mussemRouter);
-// SPA 라우팅 지원 (404 fallback → index.html)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
+    // SPA 라우팅 지원 (404 fallback → index.html)
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(clientBuildPath, "index.html"));
+    });
 
-    const httpsServer = https.createServer(credentialss, app);
+    const httpsServer = https.createServer(options, app);
     createSocketServer();
 
     httpsServer.listen(4000, () => {
