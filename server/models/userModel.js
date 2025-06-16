@@ -103,8 +103,8 @@ const socketUserMap = new Map();
 const loggedInModel = async (idPk, ip, findKey) => {
   const sessionId = uuidv4(); // UUID 생성 (또는 세션ID)
   const socketId = socketUserMap[idPk] || null; // 등록된 socketId
-
-  await redisClient.hSet(`loggedIn:${findKey}`, {
+  const Key = findKey;
+  await redisClient.hSet(`loggedIn:${idPk}`, {
     ip,
     sessionId,
     loginTime: Date.now(),
