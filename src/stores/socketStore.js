@@ -10,7 +10,8 @@ export const useSocketStore = defineStore("socket", {
 
   actions: {
     connectSocket(role) {
-      this.socket = io(`https://${IP}:5000/activeMussem`, {
+      // 어쩔수 없다. localhost 과  와이파이 IP를 수동으로 바꾸어가며 테스트하자...
+      this.socket = io(`https://mussem.kro.kr:5000/activeMussem`, {
         withCredentials: true,
       });
 

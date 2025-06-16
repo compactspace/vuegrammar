@@ -14,26 +14,33 @@ import dotenv from "dotenv";
 import { registerServantEvents } from "../eventHandler/registerServantEvents.js";
 import { registerCustomerEvents } from "../eventHandler/registerCustomerEvents.js";
 //나중 let's encrypt 에서 인증서 발급받으면 https 를 적용하라
-
+import path from "path";
 import { insertMatchingModel } from "../model/employmentModel.js";
-
 import { retrySocketRegisterEvent } from "../registerSocketEvent/retrySocketRegisterEvent.js";
 import { redisSubscriber } from "../../config/redis.js";
 import { redisPublisher } from "../../config/redis.js";
-const options = {
-  key: fs.readFileSync("C:/Windows/System32/localhost-key.pem"),
-  cert: fs.readFileSync("C:/Windows/System32/localhost.pem"),
-};
+
+const certPath = 'C:/certs';const privateKey = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-key.pem'), 'utf8');
+const certificate = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-crt.pem'), 'utf8');
+const ca = fs.readFileSync(path.join(certPath, 'mussem.kro.kr-chain.pem'), 'utf8');
+
+const credentialss = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca,
+}
+
 
 const app = express();
 //나중 let's encrypt 에서 인증서 발급받으면 https 를 적용하라.
-const socketServer = https.createServer(options, app);
+const socketServer = https.createServer(credentialss, app);
 
 //const socketServer = http.createServer(app);
 const IP = process.env.ALLOW_IP;
-console.log(`IP: ${IP}`);
+// console.log(`IP: ${IP}`);}
 const allowedOrigins = [
-  `https://${IP}:5173`,
+  
+  `https://mussem.kro.kr:4000`,
   `https://localhost:5173`,
   `http://${IP}:5173`,
   `http://localhost:5173`,
@@ -47,6 +54,7 @@ const io = new Server(socketServer, {
 });
 
 export const createSocketServer = () => {
+  console.log("✅ WebSocket 서버 5000 포트에서 실행 중");
   socketServer.listen(5000, function () {});
 };
 
@@ -62,8 +70,9 @@ loginApprovalNamespace.on("connection", (socket) => {
     userSocketMap.set(userId, socket.id);
     socket.data.userId = userId;
     console.log(
-      `📌 [loginApproval] 유저 ${userId} 등록됨 (socket: ${socket.id})`
+      `📌 [loginApproval] 유저 ${userId} 등록됨 (socket: ${socket.id} 현재 등록된 중복로그인자: ${JSON.stringify(Array.from(userSocketMap.entries()))})`
     );
+    
   });
 
   socket.on("disconnect", () => {
@@ -81,26 +90,27 @@ async function subscribeLoginApproval() {
     // 구독 채널 설정 및 메시지 처리 (node-redis v5 방식)
     await redisSubscriber.subscribe("loginApprovalRequest", async (message) => {
       console.log("✅ Redis 메시지 수신:", message);
-
+      console.log(`현재 기로그인자: ${JSON.stringify(Array.from(userSocketMap.entries()))}`)
       try {
         const { userId, ip } = JSON.parse(message);
         const socketId = userSocketMap.get(userId);
-
+        console.log(`socketId: ${socketId}`)
         // 주의: 네임스페이스 생성시 이렇게 변수에 담아 또 가져올 수 있음
         const loginNs = io.of("/loginApproval");
 
+        console.log(loginNs.sockets.get(socketId).socketId)
         // 네임스페이스 전체에 브로드캐스트 => 추후 써먹을 내용이 있을듯 전체 브로드 캐스트은 잠시 주석처리
-        loginNs.emit("requestLoginApproval", {
-          message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
-          userId,
-        });
+        // loginNs.emit("requestLoginApproval", {
+        //   message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
+        //   userId,
+        // });
 
         if (socketId && loginNs.sockets.get(socketId)) {
           const socket = loginNs.sockets.get(socketId);
 
           // 해당 유저에게만 보냄
           socket.emit("requestLoginApproval", {
-            message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 허용하시겠습니까?`,
+            message: `📲 다른 기기(${ip})에서 로그인 요청이 있습니다. 현재 기기를 강제로그 아웃하고  허용하시겠습니까?`,
             userId,
           });
 
@@ -113,6 +123,7 @@ async function subscribeLoginApproval() {
           });
         } else {
           // 유저가 없거나 연결 안 되어 있으면 자동 거절
+          console.log("왓더퍽")
           redisPublisher.publish(
             "loginApprovalResponse",
             JSON.stringify({ userId, approved: false })
@@ -138,10 +149,15 @@ async function subscribeLogoutLog() {
       "subscribeLogoutLogRequest",
       async (message) => {
         console.log("✅ Redis 로그아웃 메시지 수신:", message);
-
+ console.log(
+      `📌  현재 등록된 중복로그인자: ${JSON.stringify(Array.from(userSocketMap.entries()))})`
+    );
         const parsed = JSON.parse(message);
         const { userId } = parsed;
         userSocketMap.delete(userId);
+         console.log(
+      `📌  현재 등록된 중복로그인자 제거후 : ${JSON.stringify(Array.from(userSocketMap.entries()))})`
+    );
       }
     );
   } catch (err) {

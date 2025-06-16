@@ -11,7 +11,7 @@ export const useRetrySocketStroe = defineStore("retrySocket", {
 
   actions: {
     connectSocket({ userData, unComplteEmploy }) {
-      this.socket = io(`https://${IP}:5000/retrySocket`, {
+      this.socket = io(`https://mussem.kro.kr:5000/retrySocket`, {
         withCredentials: true,
         auth: {
           retryData: {

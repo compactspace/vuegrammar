@@ -14,7 +14,7 @@ export const useStoreSocketActivatigLocation = defineStore(
       connectSocket() {
         // 어쩔수 없다. localhost 과  와이파이 IP를 수동으로 바꾸어가며 테스트하자...
         this.socketActivatigLocation = io(
-          `https://${IP}:5000/activitingLocation`,
+          `https://mussem.kro.kr:5000/activitingLocation`,
           {
             withCredentials: true,
           }

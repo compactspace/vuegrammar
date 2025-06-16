@@ -26,6 +26,11 @@
       </div>
     </div>
   </div>
+    <LoginApprovalModal
+    v-if="showApprovalModal"
+    :message="approvalMessage"
+    @response="handleApprovalResponse"
+  />
 </template>
 <script setup>
 import { useMediaQuery } from '@vueuse/core'
@@ -37,13 +42,20 @@ import { useSocketStore } from '../stores/socketStore'
 import { useRetrySocketStroe } from '../stores/useRetrySocketStroe'
 import { useUserStore } from '../stores/userStore'
 import { useLoginApprovalSocketStore } from '../stores/useLoginApprovalSocket.js'; 
+import LoginApprovalModal from '../components/Modal/LoginApprovalModal.vue'
+import axios from 'axios'
+
+const loginApprovalSocketStore=useLoginApprovalSocketStore();
+const showApprovalModal = ref(false)
+const approvalMessage = ref('') // 메시지 저장
+
   const loginApprovalStore = useLoginApprovalSocketStore();
 const router = useRouter();
 const store = useStoreMyLocation();
-const socketStore = useSocketStore();
+const socketStroe = useSocketStore();
 const retrySocketStore=useRetrySocketStroe();
 const userStore = useUserStore()
-
+const menuOpen = ref(false)
 const unComplteEmployStatus = ref(null)
 
 
@@ -103,28 +115,47 @@ const retryJoinRoom = () => {
   });
 };
 
+const handleApprovalResponse = async (response) => {
+  console.log(`response: ${response}`)
 
+  if(response){
+    const idPk=userStore.authUser.userDetail.id;
+   const email=userStore.authUser.userDetail.email;
+   await axios.post(`users/logout`,{idPk:idPk,email:email}).then((res)=>{
+  
+     loginApprovalStore.socket.emit('loginApprovalResponse', response)
+     loginApprovalSocketStore.disconnectSocket();
+       
+       })
+
+
+ userStore.clearUser()
+    socketStroe.disconnectSocket()
+    if(retrySocketStore.socket!=null){
+      retrySocketStore.disconnectSocket();
+    }
+  
+    router.push("/")
+    menuOpen.value = false
+
+
+
+        }
+  showApprovalModal.value = false
+}
 onMounted(()=>{
 
 
-  
+ console.log(`oginApprovalStore.socket==null:${loginApprovalStore.socket==null} userStore.authUser?.userDetail:${userStore.authUser?.userDetail}`) 
 if(loginApprovalStore.socket==null &&userStore.authUser?.userDetail){
-
   loginApprovalStore.connectSocket(userStore.authUser.userDetail.email)
 
 }
   if(loginApprovalStore.socket!=null){
 
 loginApprovalStore.socket.on("requestLoginApproval", ({ message }) => {
-          const approved = confirm(message);
-
-    if (approved) {
-  // 확인 눌렀을 때 실행할 코드
-   loginApprovalStore.socket.emit("loginApprovalResponse", approved);
-} else {
-  loginApprovalStore.socket.emit("loginApprovalResponse", approved);
-}
-
+approvalMessage.value = message
+  showApprovalModal.value = true
          
         });
   }

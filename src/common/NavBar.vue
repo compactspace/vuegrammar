@@ -74,7 +74,7 @@ import { watch } from "vue"
 import axios from "axios"
 
 const userStore = useUserStore()
-const retrySocketStroe=useRetrySocketStroe();
+const retrySocketStore=useRetrySocketStroe();
 const loginApprovalSocketStore=useLoginApprovalSocketStore();
 
 
@@ -107,12 +107,14 @@ const logout = async () => {
  
      await axios.post(`users/logout`,{idPk:idPk,email:email}).then((res)=>{
 
-      csonole.log(res)
+      loginApprovalSocketStore.disconnectSocket();
+     
      }).catch((err)=>{console.log(err)})
     userStore.clearUser()
     socketStroe.disconnectSocket()
-    if(retrySocketStroe.socket!=null){
-      retrySocketStroe.disconnectSocket();
+    if(retrySocketStore.socket!=null){
+      retrySocketStore.disconnectSocket();
+      
     }
   
     router.push("/")
